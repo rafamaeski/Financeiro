@@ -1,12 +1,3 @@
-## Baixar e Carregar Pacotes ##
-library(shiny)
-library(bslib)
-library(dplyr)
-library(ggplot2)
-library(scales)
-library(DT)
-library(lubridate)
-
 server <- function(input, output, session) {
   
   rv <- reactiveValues(df = carregar_dados(), fixos = carregar_fixos())
