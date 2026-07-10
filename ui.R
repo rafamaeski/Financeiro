@@ -1,4 +1,3 @@
-
 ui <- page_navbar(
   title = tags$b("Controle Financeiro"),
   theme = bs_theme(bootswatch="flatly", primary="#1565C0",
