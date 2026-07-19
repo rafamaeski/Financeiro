@@ -6,12 +6,57 @@ library(ggplot2)
 library(scales)
 library(DT)
 library(lubridate)
+library(DBI)
+library(RPostgres)
 
 DATA_FILE  <- "lancamentos.rds"
 FIXOS_FILE <- "fixos.rds"
 
+## ── Persistencia: Supabase/Postgres (producao) ou .rds local (dev) ──────
+# No Connect Cloud, configure estas variaveis em Settings > Environment Variables:
+#   SUPABASE_HOST, SUPABASE_PORT, SUPABASE_DB, SUPABASE_USER, SUPABASE_PASSWORD
+# Se essas variaveis nao existirem (ex: rodando localmente com runApp()),
+# o app usa os arquivos .rds locais automaticamente.
+
+USA_SUPABASE <- nzchar(Sys.getenv("SUPABASE_HOST")) && nzchar(Sys.getenv("SUPABASE_PASSWORD"))
+
+conectar_db <- function() {
+  dbConnect(
+    RPostgres::Postgres(),
+    host     = Sys.getenv("SUPABASE_HOST"),
+    port     = as.integer(Sys.getenv("SUPABASE_PORT", "5432")),
+    dbname   = Sys.getenv("SUPABASE_DB", "postgres"),
+    user     = Sys.getenv("SUPABASE_USER"),
+    password = Sys.getenv("SUPABASE_PASSWORD")
+  )
+}
+
 carregar_dados <- function() {
-  if (file.exists(DATA_FILE)) {
+  if (USA_SUPABASE) {
+    df <- tryCatch({
+      con <- conectar_db()
+      on.exit(dbDisconnect(con))
+      dbGetQuery(con, "SELECT * FROM lancamentos ORDER BY id")
+    }, error = function(e) NULL)
+    
+    if (is.null(df) || nrow(df) == 0) {
+      tibble(
+        id = integer(), data = as.Date(character()),
+        descricao = character(), categoria = character(),
+        subcategoria = character(), tipo = character(),
+        cartao = character(), vencimento = as.Date(character()),
+        valor = numeric(), origem = character(),
+        divisao = numeric()
+      )
+    } else {
+      df <- as_tibble(df)
+      df$data       <- as.Date(df$data)
+      df$vencimento <- as.Date(df$vencimento)
+      if (!"origem" %in% names(df)) df$origem <- "manual"
+      if (!"divisao" %in% names(df)) df$divisao <- 0
+      df
+    }
+  } else if (file.exists(DATA_FILE)) {
     df <- readRDS(DATA_FILE)
     if (!"origem" %in% names(df)) df$origem <- "manual"
     if (!"divisao" %in% names(df)) df$divisao <- 0
@@ -29,7 +74,28 @@ carregar_dados <- function() {
 }
 
 carregar_fixos <- function() {
-  if (file.exists(FIXOS_FILE)) {
+  if (USA_SUPABASE) {
+    df <- tryCatch({
+      con <- conectar_db()
+      on.exit(dbDisconnect(con))
+      dbGetQuery(con, "SELECT * FROM fixos ORDER BY id")
+    }, error = function(e) NULL)
+    
+    if (is.null(df) || nrow(df) == 0) {
+      tibble(
+        id = integer(), descricao = character(),
+        categoria = character(), subcategoria = character(),
+        tipo = character(), cartao = character(),
+        dia = integer(), ate_mes = as.Date(character()),
+        valor = numeric(), divisao = numeric()
+      )
+    } else {
+      df <- as_tibble(df)
+      df$ate_mes <- as.Date(df$ate_mes)
+      if (!"divisao" %in% names(df)) df$divisao <- 0
+      df
+    }
+  } else if (file.exists(FIXOS_FILE)) {
     df <- readRDS(FIXOS_FILE)
     if (!"divisao" %in% names(df)) df$divisao <- 0
     df
@@ -44,8 +110,27 @@ carregar_fixos <- function() {
   }
 }
 
-salvar_dados <- function(df) saveRDS(df, DATA_FILE)
-salvar_fixos <- function(df) saveRDS(df, FIXOS_FILE)
+salvar_dados <- function(df) {
+  if (USA_SUPABASE) {
+    con <- conectar_db()
+    on.exit(dbDisconnect(con))
+    dbExecute(con, "DELETE FROM lancamentos")
+    if (nrow(df) > 0) dbAppendTable(con, "lancamentos", df)
+  } else {
+    saveRDS(df, DATA_FILE)
+  }
+}
+
+salvar_fixos <- function(df) {
+  if (USA_SUPABASE) {
+    con <- conectar_db()
+    on.exit(dbDisconnect(con))
+    dbExecute(con, "DELETE FROM fixos")
+    if (nrow(df) > 0) dbAppendTable(con, "fixos", df)
+  } else {
+    saveRDS(df, FIXOS_FILE)
+  }
+}
 
 CATEGORIAS   <- c("Basico", "Extras")
 SUBCATEGORIAS <- c("Moradia","Alimentacao","Transporte","Saude","Educacao",
