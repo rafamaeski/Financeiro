@@ -38,7 +38,7 @@ carregar_dados <- function() {
       on.exit(dbDisconnect(con))
       dbGetQuery(con, "SELECT * FROM lancamentos ORDER BY id")
     }, error = function(e) NULL)
-    
+
     if (is.null(df) || nrow(df) == 0) {
       tibble(
         id = integer(), data = as.Date(character()),
@@ -80,31 +80,36 @@ carregar_fixos <- function() {
       on.exit(dbDisconnect(con))
       dbGetQuery(con, "SELECT * FROM fixos ORDER BY id")
     }, error = function(e) NULL)
-    
+
     if (is.null(df) || nrow(df) == 0) {
       tibble(
         id = integer(), descricao = character(),
         categoria = character(), subcategoria = character(),
         tipo = character(), cartao = character(),
-        dia = integer(), ate_mes = as.Date(character()),
+        dia = integer(), mes_inicio = as.Date(character()),
+        ate_mes = as.Date(character()),
         valor = numeric(), divisao = numeric()
       )
     } else {
       df <- as_tibble(df)
       df$ate_mes <- as.Date(df$ate_mes)
       if (!"divisao" %in% names(df)) df$divisao <- 0
+      if (!"mes_inicio" %in% names(df)) df$mes_inicio <- as.Date("2000-01-01")
+      df$mes_inicio <- as.Date(df$mes_inicio)
       df
     }
   } else if (file.exists(FIXOS_FILE)) {
     df <- readRDS(FIXOS_FILE)
     if (!"divisao" %in% names(df)) df$divisao <- 0
+    if (!"mes_inicio" %in% names(df)) df$mes_inicio <- as.Date("2000-01-01")
     df
   } else {
     tibble(
       id = integer(), descricao = character(),
       categoria = character(), subcategoria = character(),
       tipo = character(), cartao = character(),
-      dia = integer(), ate_mes = as.Date(character()),
+      dia = integer(), mes_inicio = as.Date(character()),
+      ate_mes = as.Date(character()),
       valor = numeric(), divisao = numeric()
     )
   }

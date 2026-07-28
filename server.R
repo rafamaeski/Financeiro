@@ -1,8 +1,8 @@
 ## SERVER ##########################################
 server <- function(input, output, session) {
-  
+
   rv <- reactiveValues(df = carregar_dados(), fixos = carregar_fixos())
-  
+
   # Subcategoria lancamento normal
   output$subcategoria_ui <- renderUI({
     req(input$categoria)
@@ -22,7 +22,8 @@ server <- function(input, output, session) {
     if (nrow(rv$fixos) == 0) return(invisible())
     
     fixos_validos <- rv$fixos %>%
-      filter(floor_date(ate_mes, "month") >= mes_ano)
+      filter(floor_date(ate_mes, "month") >= mes_ano,
+             floor_date(mes_inicio, "month") <= mes_ano)
     
     if (nrow(fixos_validos) == 0) return(invisible())
     
@@ -109,6 +110,7 @@ server <- function(input, output, session) {
       tipo         = input$fixo_tipo,
       cartao       = "-",
       dia          = as.integer(input$fixo_dia),
+      mes_inicio   = as.Date(floor_date(Sys.Date(), "month")),
       ate_mes      = as.Date(floor_date(input$fixo_ate, "month")),
       valor        = as.numeric(input$fixo_valor),
       divisao      = if (input$fixo_tipo == "Debito" && isTRUE(input$fixo_dividir)) input$fixo_divisao_pct else 0
@@ -169,10 +171,11 @@ server <- function(input, output, session) {
   # Tabela fixos
   output$tabela_fixos <- renderDT({
     rv$fixos %>%
-      mutate(`Dia do mes`=dia, `Ate`=format(ate_mes,"%m/%Y"), Valor=fmt_brl(valor),
+      mutate(`Dia do mes`=dia, `Desde`=format(mes_inicio,"%m/%Y"),
+             `Ate`=format(ate_mes,"%m/%Y"), Valor=fmt_brl(valor),
              `% Dela`=if_else(divisao > 0, paste0(divisao, "%"), "-")) %>%
       select(Descricao=descricao, Subcategoria=subcategoria,
-             Tipo=tipo, `Dia do mes`, `Ate`, Valor, `% Dela`) %>%
+             Tipo=tipo, `Dia do mes`, `Desde`, `Ate`, Valor, `% Dela`) %>%
       datatable(selection="single", rownames=FALSE,
                 options=list(dom="t", pageLength=20))
   })
@@ -196,16 +199,34 @@ server <- function(input, output, session) {
     df  <- dados_mes()
     rec <- sum(df$valor[df$tipo %in% receitas], na.rm=TRUE)
     des <- sum(df$valor_pessoal[df$tipo %in% c("Debito","Credito")], na.rm=TRUE)
-    sal <- rec - des
-    kpi <- function(label, val, cor) {
+    sal_mes <- rec - des
+
+    # Saldo acumulado: soma receitas - despesas de todos os meses ate o mes selecionado (inclusive)
+    mes_ano <- as.Date(paste0("01/", input$filtro_mes), format="%d/%m/%Y")
+    historico <- rv$df %>%
+      filter(floor_date(vencimento, "month") <= mes_ano) %>%
+      mutate(
+        valor_pessoal = if_else(tipo %in% c("Debito","Credito"),
+                                 valor * (1 - divisao/100),
+                                 valor)
+      )
+    rec_acum <- sum(historico$valor[historico$tipo %in% receitas], na.rm=TRUE)
+    des_acum <- sum(historico$valor_pessoal[historico$tipo %in% c("Debito","Credito")], na.rm=TRUE)
+    sal_acum <- rec_acum - des_acum
+
+    kpi <- function(label, val, cor, subtexto=NULL) {
       div(class="mb-3",
           tags$small(class="text-muted", label),
-          tags$h5(class=paste("fw-bold", cor), fmt_brl(val)))
+          tags$h5(class=paste("fw-bold", cor), fmt_brl(val)),
+          if (!is.null(subtexto)) tags$small(class="text-muted", subtexto))
     }
     tagList(
-      kpi("Receitas", rec, "text-success"),
-      kpi("Despesas", des, "text-danger"),
-      kpi("Saldo", sal, if(sal>=0) "text-success" else "text-danger"),
+      kpi("Receitas do mes", rec, "text-success"),
+      kpi("Despesas do mes", des, "text-danger"),
+      kpi("Saldo do mes", sal_mes, if(sal_mes>=0) "text-success" else "text-danger"),
+      hr(),
+      kpi("Saldo acumulado", sal_acum, if(sal_acum>=0) "text-success" else "text-danger",
+          paste0("Somando todos os meses ate ", input$filtro_mes)),
       hr(),
       tags$small(class="text-muted", paste0(nrow(df)," lancamentos no mes"))
     )

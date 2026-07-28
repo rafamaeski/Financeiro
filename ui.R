@@ -92,7 +92,7 @@ ui <- page_navbar(
                                 card_body(
                                   selectInput("filtro_mes", "Mes",
                                               choices=format(seq(floor_date(Sys.Date()-365,"month"),
-                                                                 ceiling_date(Sys.Date(),"month"),
+                                                                 ceiling_date(Sys.Date()+365,"month"),
                                                                  by="month"), "%m/%Y"),
                                               selected=format(Sys.Date(),"%m/%Y")),
                                   hr(),
