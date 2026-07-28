@@ -25,7 +25,7 @@ ui <- page_navbar(
                                                              value=ceiling_date(Sys.Date(),"month"),
                                                              format="dd/mm/yyyy", language="pt-BR", min=Sys.Date())),
                                   conditionalPanel("input.tipo == 'Debito' || input.tipo == 'Credito'",
-                                                   checkboxInput("dividir", "Dividir com namorada?", value=FALSE),
+                                                   checkboxInput("dividir", "Dividido com meu amor", value=FALSE),
                                                    conditionalPanel("input.dividir == true",
                                                                     sliderInput("divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")

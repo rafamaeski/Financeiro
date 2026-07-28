@@ -343,7 +343,7 @@ server <- function(input, output, session) {
       hr(),
       div(class="card border-warning mb-2",
           div(class="card-body p-3",
-              tags$p(class="text-muted small mb-1", "Namorada te deve"),
+              tags$p(class="text-muted small mb-1", "Sara tem que te mandar"),
               tags$h4(class="fw-bold text-warning mb-0", fmt_brl(total_ela)),
               tags$small(class="text-muted",
                          paste0(n_divididas, " conta(s) dividida(s)"))
