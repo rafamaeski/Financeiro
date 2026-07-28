@@ -59,7 +59,7 @@ ui <- page_navbar(
                                                    selectInput("fixo_categoria", "Categoria", choices=CATEGORIAS),
                                                    uiOutput("fixo_subcategoria_ui")),
                                   conditionalPanel("input.fixo_tipo == 'Debito'",
-                                                   checkboxInput("fixo_dividir", "Dividir com namorada?", value=FALSE),
+                                                   checkboxInput("fixo_dividir", "Dividido com meu amor", value=FALSE),
                                                    conditionalPanel("input.fixo_dividir == true",
                                                                     sliderInput("fixo_divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -130,7 +130,7 @@ ui <- page_navbar(
                              )
                            ),
                            card(
-                             card_header("Lancamentos divididos com a namorada"),
+                             card_header("Lancamentos divididos com a Sara"),
                              card_body(DTOutput("tabela_credito"))
                            )
             )
