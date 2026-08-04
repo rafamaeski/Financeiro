@@ -27,7 +27,7 @@ ui <- page_navbar(
                                                    numericInput("parcelas", "Numero de parcelas",
                                                                 value=1, min=1, max=48, step=1)),
                                   conditionalPanel("input.tipo == 'Debito' || input.tipo == 'Credito'",
-                                                   checkboxInput("dividir", "Dividir com namorada?", value=FALSE),
+                                                   checkboxInput("dividir", "Dividir com meu amor", value=FALSE),
                                                    conditionalPanel("input.dividir == true",
                                                                     sliderInput("divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -64,7 +64,7 @@ ui <- page_navbar(
                                                    selectInput("fixo_categoria", "Categoria", choices=CATEGORIAS),
                                                    uiOutput("fixo_subcategoria_ui")),
                                   conditionalPanel("input.fixo_tipo == 'Debito'",
-                                                   checkboxInput("fixo_dividir", "Dividir com namorada?", value=FALSE),
+                                                   checkboxInput("fixo_dividir", "Dividir com meu amor", value=FALSE),
                                                    conditionalPanel("input.fixo_dividir == true",
                                                                     sliderInput("fixo_divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -135,7 +135,7 @@ ui <- page_navbar(
                              )
                            ),
                            card(
-                             card_header("Lancamentos divididos com a namorada"),
+                             card_header("Lancamentos divididos com meu amor"),
                              card_body(DTOutput("tabela_credito"))
                            )
             )
