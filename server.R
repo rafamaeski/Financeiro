@@ -74,24 +74,59 @@ server <- function(input, output, session) {
     if (is.na(input$valor) || input$valor <= 0) {
       showNotification("Informe um valor maior que zero.", type="warning"); return()
     }
+
+    n_parcelas <- if (input$tipo == "Credito" && !is.null(input$parcelas)) {
+      max(1L, as.integer(input$parcelas))
+    } else {
+      1L
+    }
+
+    id_inicial <- if (nrow(rv$df)==0) 1L else max(rv$df$id)+1L
+
+    # Divide o valor total pelas parcelas, ajustando centavos na ultima
+    # parcela para que a soma bata exatamente com o valor informado.
+    valores_parcela <- if (n_parcelas > 1) {
+      base <- round(input$valor / n_parcelas, 2)
+      valores <- rep(base, n_parcelas)
+      valores[n_parcelas] <- round(input$valor - base * (n_parcelas - 1), 2)
+      valores
+    } else {
+      input$valor
+    }
+
     novo <- tibble(
-      id           = if (nrow(rv$df)==0) 1L else max(rv$df$id)+1L,
+      id           = seq(id_inicial, length.out = n_parcelas),
       data         = as.Date(input$data),
-      descricao    = trimws(input$descricao),
+      descricao    = if (n_parcelas > 1) {
+        paste0(trimws(input$descricao), " (", seq_len(n_parcelas), "/", n_parcelas, ")")
+      } else {
+        trimws(input$descricao)
+      },
       categoria    = if (input$tipo %in% receitas) "-" else input$categoria,
       subcategoria = if (input$tipo %in% receitas) "Receita" else input$subcategoria,
       tipo         = input$tipo,
       cartao       = if (input$tipo=="Credito") input$cartao else "-",
-      vencimento   = as.Date(if (input$tipo=="Credito") input$vencimento else input$data),
-      valor        = as.numeric(input$valor),
+      vencimento   = if (input$tipo=="Credito") {
+        as.Date(input$vencimento) %m+% months(0:(n_parcelas-1))
+      } else {
+        as.Date(input$data)
+      },
+      valor        = as.numeric(valores_parcela),
       origem       = "manual",
       divisao      = if (input$tipo %in% c("Debito","Credito") && isTRUE(input$dividir)) input$divisao_pct else 0
     )
     rv$df <- bind_rows(rv$df, novo)
     salvar_dados(rv$df)
-    showNotification(paste0("'", novo$descricao, "' adicionado!"), type="message", duration=3)
+    msg <- if (n_parcelas > 1) {
+      paste0("'", trimws(input$descricao), "' adicionado em ", n_parcelas,
+             "x de ", fmt_brl(valores_parcela[1]), "!")
+    } else {
+      paste0("'", trimws(input$descricao), "' adicionado!")
+    }
+    showNotification(msg, type="message", duration=3)
     updateTextInput(session, "descricao", value="")
     updateNumericInput(session, "valor", value=NA)
+    updateNumericInput(session, "parcelas", value=1)
     updateDateInput(session, "data", value=Sys.Date())
   })
   
@@ -343,7 +378,7 @@ server <- function(input, output, session) {
       hr(),
       div(class="card border-warning mb-2",
           div(class="card-body p-3",
-              tags$p(class="text-muted small mb-1", "Sara tem que te mandar"),
+              tags$p(class="text-muted small mb-1", "Namorada te deve"),
               tags$h4(class="fw-bold text-warning mb-0", fmt_brl(total_ela)),
               tags$small(class="text-muted",
                          paste0(n_divididas, " conta(s) dividida(s)"))

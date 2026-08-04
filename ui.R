@@ -23,13 +23,18 @@ ui <- page_navbar(
                                                        "Informe o vencimento da fatura em que esta compra caira."),
                                                    dateInput("vencimento", "Vencimento da fatura",
                                                              value=ceiling_date(Sys.Date(),"month"),
-                                                             format="dd/mm/yyyy", language="pt-BR", min=Sys.Date())),
+                                                             format="dd/mm/yyyy", language="pt-BR", min=Sys.Date()),
+                                                   numericInput("parcelas", "Numero de parcelas",
+                                                                value=1, min=1, max=48, step=1)),
                                   conditionalPanel("input.tipo == 'Debito' || input.tipo == 'Credito'",
-                                                   checkboxInput("dividir", "Dividido com meu amor", value=FALSE),
+                                                   checkboxInput("dividir", "Dividir com namorada?", value=FALSE),
                                                    conditionalPanel("input.dividir == true",
                                                                     sliderInput("divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
                                                    )),
+                                  conditionalPanel("input.tipo == 'Credito' && input.parcelas > 1",
+                                                   div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
+                                                       "Informe o valor TOTAL da compra — o app divide pelas parcelas automaticamente.")),
                                   numericInput("valor", "Valor (R$)", value=NULL, min=0.01, step=0.01),
                                   actionButton("adicionar", "Adicionar lancamento",
                                                class="btn-primary w-100 mt-2", icon=icon("check"))
@@ -59,7 +64,7 @@ ui <- page_navbar(
                                                    selectInput("fixo_categoria", "Categoria", choices=CATEGORIAS),
                                                    uiOutput("fixo_subcategoria_ui")),
                                   conditionalPanel("input.fixo_tipo == 'Debito'",
-                                                   checkboxInput("fixo_dividir", "Dividido com meu amor", value=FALSE),
+                                                   checkboxInput("fixo_dividir", "Dividir com namorada?", value=FALSE),
                                                    conditionalPanel("input.fixo_dividir == true",
                                                                     sliderInput("fixo_divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -130,7 +135,7 @@ ui <- page_navbar(
                              )
                            ),
                            card(
-                             card_header("Lancamentos divididos com a Sara"),
+                             card_header("Lancamentos divididos com a namorada"),
                              card_body(DTOutput("tabela_credito"))
                            )
             )
