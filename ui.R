@@ -7,7 +7,7 @@ ui_app <- page_navbar(
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
-            layout_columns(col_widths = c(3, 7),
+            layout_columns(col_widths = c(3, 9),
                            card(card_header("Novo lancamento"),
                                 card_body(
                                   dateInput("data", "Data", value=Sys.Date(), format="dd/mm/yyyy", language="pt-BR"),
@@ -56,7 +56,7 @@ ui_app <- page_navbar(
 
   nav_panel("Fixos", icon = icon("repeat"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            card(card_header("Cadastrar lancamento fixo"),
                                 card_body(
                                   textInput("fixo_descricao", "Descricao",
@@ -126,7 +126,7 @@ ui_app <- page_navbar(
 
   nav_panel("Contas divididas", icon = icon("people-arrows"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            card(
                              card_header("Contas Divididas"),
                              card_body(
