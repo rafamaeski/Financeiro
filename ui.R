@@ -1,13 +1,15 @@
 ## UI #######################################
 ui_app <- page_navbar(
   title = tags$b("Controle Financeiro"),
-  theme = bs_theme(bootswatch="flatly", primary="#1565C0",
+  theme = bs_theme(bootswatch="flatly",
+                   primary="#90d7ff", secondary="#b8b3be",
+                   success="#a8d5ba", danger="#e8a5a5", info="#c9f9ff",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
-  bg = "#1565C0", inverse = TRUE,
+  bg = "#90d7ff", inverse = FALSE,
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
-            layout_columns(col_widths = c(3, 9),
+            layout_columns(col_widths = c(5, 7),
                            card(card_header("Novo lancamento"),
                                 card_body(
                                   dateInput("data", "Data", value=Sys.Date(), format="dd/mm/yyyy", language="pt-BR"),
@@ -56,7 +58,7 @@ ui_app <- page_navbar(
 
   nav_panel("Fixos", icon = icon("repeat"),
             br(),
-            layout_columns(col_widths = c(3, 9),
+            layout_columns(col_widths = c(4, 8),
                            card(card_header("Cadastrar lancamento fixo"),
                                 card_body(
                                   textInput("fixo_descricao", "Descricao",
@@ -126,7 +128,7 @@ ui_app <- page_navbar(
 
   nav_panel("Contas divididas", icon = icon("people-arrows"),
             br(),
-            layout_columns(col_widths = c(3, 9),
+            layout_columns(col_widths = c(4, 8),
                            card(
                              card_header("Contas Divididas"),
                              card_body(
@@ -170,20 +172,20 @@ ui_app <- page_navbar(
                                   )
                              ),
                              br(),
-                             card(card_header("Resumo"),
-                                  card_body(uiOutput("resumo_investimentos")))
+                             card(
+                               card_header(layout_columns(col_widths=c(6,3,3),
+                                                          "Investimentos cadastrados",
+                                                          div(style="text-align:right;",
+                                                              actionButton("editar_investimento", "Editar",
+                                                                           class="btn-outline-primary btn-sm")),
+                                                          div(style="text-align:right;",
+                                                              actionButton("excluir_investimento", "Excluir",
+                                                                           class="btn-outline-danger btn-sm")))),
+                               card_body(DTOutput("tabela_investimentos"))
+                             )
                            ),
-                           card(
-                             card_header(layout_columns(col_widths=c(6,3,3),
-                                                        "Investimentos cadastrados",
-                                                        div(style="text-align:right;",
-                                                            actionButton("editar_investimento", "Editar",
-                                                                         class="btn-outline-primary btn-sm")),
-                                                        div(style="text-align:right;",
-                                                            actionButton("excluir_investimento", "Excluir",
-                                                                         class="btn-outline-danger btn-sm")))),
-                             card_body(DTOutput("tabela_investimentos"))
-                           )
+                           card(card_header("Resumo — Distribuicao por tipo"),
+                                card_body(plotOutput("graf_investimentos", height="420px")))
             )
   )
 )

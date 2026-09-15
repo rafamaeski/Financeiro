@@ -351,8 +351,8 @@ server <- function(input, output, session) {
   output$tabela_recente <- renderDT({
     rv$df %>%
       arrange(desc(data), desc(id)) %>%
-      head(50) %>%
       mutate(
+        DataOrd   = as.numeric(data),
         Data      = format(data, "%d/%m/%Y"),
         Vencimento = if_else(tipo=="Credito", format(vencimento,"%d/%m/%Y"), "-"),
         Origem    = if_else(origem=="fixo", "Auto", "Manual"),
@@ -360,10 +360,16 @@ server <- function(input, output, session) {
         Valor     = fmt_brl(valor)
       ) %>%
       select(Data, Descricao=descricao, Subcategoria=subcategoria,
-             Tipo=tipo, Origem, `Valor (R$)`=Valor, Vencimento, `% Dela`=Divisao) %>%
+             Tipo=tipo, Origem, `Valor (R$)`=Valor, Vencimento, `% Dela`=Divisao, DataOrd) %>%
       datatable(selection="single", rownames=FALSE,
-                options=list(dom="tp", pageLength=10,
+                options=list(dom="ftp", pageLength=10,
+                             columnDefs=list(
+                               list(visible=FALSE, targets=8),
+                               list(orderData=8, targets=0)
+                             ),
                              language=list(
+                               search="Buscar:",
+                               searchPlaceholder="Descricao, categoria, etc.",
                                paginate=list(previous="Ant", `next`="Pro"),
                                info="Mostrando _START_ a _END_ de _TOTAL_")))
   })
@@ -447,7 +453,7 @@ server <- function(input, output, session) {
       geom_col(width=0.5, show.legend=FALSE) +
       geom_text(aes(label=fmt_brl(Total)), vjust=-0.4,
                 fontface="bold", size=3.8, color="#333") +
-      scale_fill_manual(values=c(Receita="#2E7D32", Despesa="#C62828")) +
+      scale_fill_manual(values=c(Receita=COR_RECEITA, Despesa=COR_DESPESA)) +
       scale_y_continuous(expand=expansion(mult=c(0,.18)),
                          labels=label_number(big.mark=".", decimal.mark=",")) +
       labs(x=NULL, y="R$", title=paste("Fluxo -", input$filtro_mes)) +
@@ -492,7 +498,7 @@ server <- function(input, output, session) {
       ggplot(aes(x=mes, y=total, color=tipo_grupo, group=tipo_grupo)) +
       geom_line(linewidth=1.2) +
       geom_point(size=3) +
-      scale_color_manual(values=c(Receita="#2E7D32", Despesa="#C62828"), name=NULL) +
+      scale_color_manual(values=c(Receita=COR_RECEITA, Despesa=COR_DESPESA), name=NULL) +
       scale_x_date(date_breaks="1 month", date_labels="%b/%y") +
       scale_y_continuous(labels=label_number(big.mark=".", decimal.mark=",")) +
       labs(x=NULL, y="R$", title="Historico Mensal - Receitas vs Despesas") +
@@ -690,24 +696,26 @@ server <- function(input, output, session) {
                                info="Mostrando _START_ a _END_ de _TOTAL_")))
   })
 
-  output$resumo_investimentos <- renderUI({
+  output$graf_investimentos <- renderPlot({
     df <- rv$investimentos
-    total_aportado <- sum(df$valor_aportado, na.rm=TRUE)
-    total_atual    <- sum(df$valor_atual, na.rm=TRUE)
-    rentab <- if (total_aportado > 0) (total_atual / total_aportado - 1) * 100 else 0
+    if (nrow(df) == 0) return(NULL)
 
-    kpi <- function(label, val, cor) {
-      div(class="mb-3",
-          tags$small(class="text-muted", label),
-          tags$h5(class=paste("fw-bold", cor), val))
-    }
-    tagList(
-      kpi("Total aportado", fmt_brl(total_aportado), "text-dark"),
-      kpi("Valor atual", fmt_brl(total_atual), "text-primary"),
-      kpi("Rentabilidade", paste0(round(rentab, 1), "%"),
-          if (rentab >= 0) "text-success" else "text-danger"),
-      hr(),
-      tags$small(class="text-muted", paste0(nrow(df), " investimento(s) cadastrado(s)"))
-    )
+    df %>%
+      group_by(tipo) %>%
+      summarise(total = sum(valor_aportado), .groups="drop") %>%
+      mutate(pct = total / sum(total)) %>%
+      ggplot(aes(x="", y=total, fill=tipo)) +
+      geom_col(width=1, color="white") +
+      coord_polar("y") +
+      geom_text(aes(label=paste0(scales::percent(pct, accuracy=1))),
+                position=position_stack(vjust=0.5), size=4.5, color="#2c3e50", fontface="bold") +
+      scale_fill_manual(values=CORES_INVEST, name="Tipo") +
+      labs(title=paste0("Total investido: ", fmt_brl(sum(df$valor_aportado, na.rm=TRUE)))) +
+      theme_void() +
+      theme(
+        plot.title = element_text(face="bold", size=13, color="#2c3e50", hjust=0.5),
+        legend.position = "bottom",
+        legend.title = element_text(face="bold")
+      )
   })
 }

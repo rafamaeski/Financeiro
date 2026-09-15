@@ -199,22 +199,34 @@ SUBCATEGORIAS <- c("Moradia","Alimentacao","Transporte","Saude","Educacao",
                    "Lazer","Comprinhas","Assinaturas","Investimento","Outros")
 receitas <- c("Receita Fixa", "Receita Eventual")
 
+## Paleta principal do app: #90d7ff, #c9f9ff, #bfd0e0, #b8b3be
+## Demais cores escolhidas em tons pasteis que combinam com essa base.
 CORES_SUBCAT <- c(
-  Moradia="#1565C0", Alimentacao="#2E7D32", Transporte="#F57F17",
-  Saude="#AD1457", Educacao="#6A1B9A", Lazer="#00838F",
-  Comprinhas="#4E342E", Assinaturas="#37474F",
-  Investimento="#0D47A1", Outros="#757575"
+  Moradia="#90d7ff", Alimentacao="#b8e0c9", Transporte="#c9b8de",
+  Saude="#e0b8c9", Educacao="#bfd0e0", Lazer="#c9f9ff",
+  Comprinhas="#e0cbb8", Assinaturas="#8fa8c0",
+  Investimento="#9b8aa3", Outros="#b8b3be"
+)
+
+# Verde e vermelho pasteis para Receita x Despesa (mantendo a semantica)
+COR_RECEITA <- "#a8d5ba"
+COR_DESPESA <- "#e8a5a5"
+
+# Cores para o grafico de distribuicao de investimentos por tipo
+CORES_INVEST <- c(
+  "Renda Fixa"="#90d7ff", "Fundos"="#c9f9ff", "Acoes"="#bfd0e0",
+  "Cripto"="#c9b8de", "Outros"="#b8b3be"
 )
 
 tema_app <- theme_minimal(base_family = "sans") +
   theme(
-    plot.background = element_rect(fill="#f5f7fa", color=NA),
-    panel.background = element_rect(fill="#f5f7fa", color=NA),
+    plot.background = element_rect(fill="#f4fbfd", color=NA),
+    panel.background = element_rect(fill="#f4fbfd", color=NA),
     panel.grid.minor = element_blank(),
-    panel.grid.major = element_line(color="#e0e4ea"),
-    plot.title = element_text(face="bold", size=13, color="#1a1a2e"),
-    axis.text = element_text(color="#555", size=10),
-    legend.background = element_rect(fill="#f5f7fa", color=NA)
+    panel.grid.major = element_line(color="#dce9ee"),
+    plot.title = element_text(face="bold", size=13, color="#2c3e50"),
+    axis.text = element_text(color="#5a6b73", size=10),
+    legend.background = element_rect(fill="#f4fbfd", color=NA)
   )
 
 fmt_brl <- function(x) {
