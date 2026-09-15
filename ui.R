@@ -2,10 +2,10 @@
 ui_app <- page_navbar(
   title = tags$b("Controle Financeiro"),
   theme = bs_theme(bootswatch="flatly",
-                   primary="#90d7ff", secondary="#b8b3be",
-                   success="#a8d5ba", danger="#e8a5a5", info="#c9f9ff",
+                   primary="#2ba9e0", secondary="#7a6f8a",
+                   success="#3fae6a", danger="#d1495b", info="#35c4d9",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
-  bg = "#90d7ff", inverse = FALSE,
+  bg = "#2ba9e0", inverse = TRUE,
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
@@ -58,7 +58,7 @@ ui_app <- page_navbar(
 
   nav_panel("Fixos", icon = icon("repeat"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            card(card_header("Cadastrar lancamento fixo"),
                                 card_body(
                                   textInput("fixo_descricao", "Descricao",
@@ -128,7 +128,7 @@ ui_app <- page_navbar(
 
   nav_panel("Contas divididas", icon = icon("people-arrows"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            card(
                              card_header("Contas Divididas"),
                              card_body(
@@ -151,7 +151,7 @@ ui_app <- page_navbar(
 
   nav_panel("Investimentos", icon = icon("chart-line"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            div(
                              card(card_header("Novo investimento"),
                                   card_body(
