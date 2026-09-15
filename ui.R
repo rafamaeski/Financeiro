@@ -1,6 +1,6 @@
 ## UI #######################################
 ui_app <- page_navbar(
-  title = tags$b("Controle Financeiro"),
+  title = tags$b("Meu Dinheirin"),
   theme = bs_theme(bootswatch="flatly",
                    primary="#2ba9e0", secondary="#7a6f8a",
                    success="#3fae6a", danger="#d1495b", info="#35c4d9",
@@ -126,11 +126,11 @@ ui_app <- page_navbar(
             )
   ),
 
-  nav_panel("Contas divididas", icon = icon("people-arrows"),
+  nav_panel("Divisão de bens", icon = icon("people-arrows"),
             br(),
             layout_columns(col_widths = c(3, 9),
                            card(
-                             card_header("Contas Divididas"),
+                             card_header("Divisão de bens"),
                              card_body(
                                selectInput("credito_venc", "Mes de referencia",
                                            choices  = c("Todos os meses",

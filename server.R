@@ -121,7 +121,7 @@ server <- function(input, output, session) {
       },
       valor        = as.numeric(valores_parcela),
       origem       = "manual",
-      divisao      = if (input$tipo %in% c("Debito","Credito") && isTRUE(input$dividir)) input$divisao_pct else 0
+      divisao      = if (input$tipo %in% c("Debito","Credito") && isTRUE(input$)) input$divisao_pct else 0
     )
     rv$df <- bind_rows(rv$df, novo)
     salvar_dados(rv$df)
@@ -156,7 +156,7 @@ server <- function(input, output, session) {
       mes_inicio   = as.Date(floor_date(Sys.Date(), "month")),
       ate_mes      = as.Date(floor_date(input$fixo_ate, "month")),
       valor        = as.numeric(input$fixo_valor),
-      divisao      = if (input$fixo_tipo == "Debito" && isTRUE(input$fixo_dividir)) input$fixo_divisao_pct else 0
+      divisao      = if (input$fixo_tipo == "Debito" && isTRUE(input$fixo_)) input$fixo_divisao_pct else 0
     )
     rv$fixos <- bind_rows(rv$fixos, novo_fixo)
     salvar_fixos(rv$fixos)
@@ -198,8 +198,8 @@ server <- function(input, output, session) {
                     selected = if (linha$categoria %in% CATEGORIAS) linha$categoria else CATEGORIAS[1]),
         uiOutput("edit_fixo_subcategoria_ui")),
       conditionalPanel("input.edit_fixo_tipo == 'Debito'",
-        checkboxInput("edit_fixo_dividir", "Dividir com namorada?", value = linha$divisao > 0),
-        conditionalPanel("input.edit_fixo_dividir == true",
+        checkboxInput("edit_fixo_", " com meu amor", value = linha$divisao > 0),
+        conditionalPanel("input.edit_fixo_ == true",
           sliderInput("edit_fixo_divisao_pct", "% que ela paga", min=5, max=100, step=5,
                       value = if (linha$divisao > 0) linha$divisao else 50, post="%"))),
       numericInput("edit_fixo_dia", "Dia do mes que cai", value = linha$dia, min=1, max=28, step=1),
@@ -246,7 +246,7 @@ server <- function(input, output, session) {
         ate_mes = if_else(id == id_alvo, as.Date(floor_date(input$edit_fixo_ate, "month")), ate_mes),
         valor = if_else(id == id_alvo, as.numeric(input$edit_fixo_valor), valor),
         divisao = if_else(id == id_alvo,
-                           if (input$edit_fixo_tipo == "Debito" && isTRUE(input$edit_fixo_dividir)) input$edit_fixo_divisao_pct else 0,
+                           if (input$edit_fixo_tipo == "Debito" && isTRUE(input$edit_fixo_)) input$edit_fixo_divisao_pct else 0,
                            divisao)
       )
     salvar_fixos(rv$fixos)
@@ -292,7 +292,7 @@ server <- function(input, output, session) {
         dateInput("edit_vencimento", "Vencimento da fatura", value = linha$vencimento,
                   format="dd/mm/yyyy", language="pt-BR")),
       conditionalPanel("input.edit_tipo == 'Debito' || input.edit_tipo == 'Credito'",
-        checkboxInput("edit_dividir", "Dividir com namorada?", value = linha$divisao > 0),
+        checkboxInput("edit_", " com meu amor", value = linha$divisao > 0),
         conditionalPanel("input.edit_dividir == true",
           sliderInput("edit_divisao_pct", "% que ela paga", min=5, max=100, step=5,
                       value = if (linha$divisao > 0) linha$divisao else 50, post="%"))),
@@ -549,7 +549,7 @@ server <- function(input, output, session) {
       hr(),
       div(class="card border-warning mb-2",
           div(class="card-body p-3",
-              tags$p(class="text-muted small mb-1", "Namorada te deve"),
+              tags$p(class="text-muted small mb-1", "meu amor te deve"),
               tags$h4(class="fw-bold text-warning mb-0", fmt_brl(total_ela)),
               tags$small(class="text-muted",
                          paste0(n_divididas, " conta(s) dividida(s)"))
