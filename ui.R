@@ -7,7 +7,7 @@ ui_app <- page_navbar(
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
-            layout_columns(col_widths = c(5, 7),
+            layout_columns(col_widths = c(3, 7),
                            card(card_header("Novo lancamento"),
                                 card_body(
                                   dateInput("data", "Data", value=Sys.Date(), format="dd/mm/yyyy", language="pt-BR"),
