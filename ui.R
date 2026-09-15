@@ -1,5 +1,5 @@
 ## UI #######################################
-ui <- page_navbar(
+ui_app <- page_navbar(
   title = tags$b("Controle Financeiro"),
   theme = bs_theme(bootswatch="flatly", primary="#1565C0",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
@@ -27,7 +27,7 @@ ui <- page_navbar(
                                                    numericInput("parcelas", "Numero de parcelas",
                                                                 value=1, min=1, max=48, step=1)),
                                   conditionalPanel("input.tipo == 'Debito' || input.tipo == 'Credito'",
-                                                   checkboxInput("dividir", "Dividir com meu amor", value=FALSE),
+                                                   checkboxInput("dividir", "Dividir com namorada?", value=FALSE),
                                                    conditionalPanel("input.dividir == true",
                                                                     sliderInput("divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -41,10 +41,13 @@ ui <- page_navbar(
                                 )
                            ),
                            card(
-                             card_header(layout_columns(col_widths=c(8,4),
+                             card_header(layout_columns(col_widths=c(6,3,3),
                                                         "Ultimos lancamentos",
                                                         div(style="text-align:right;",
-                                                            actionButton("limpar_sel", "Excluir selecionado",
+                                                            actionButton("editar_sel", "Editar",
+                                                                         class="btn-outline-primary btn-sm")),
+                                                        div(style="text-align:right;",
+                                                            actionButton("limpar_sel", "Excluir",
                                                                          class="btn-outline-danger btn-sm")))),
                              card_body(DTOutput("tabela_recente"))
                            )
@@ -64,7 +67,7 @@ ui <- page_navbar(
                                                    selectInput("fixo_categoria", "Categoria", choices=CATEGORIAS),
                                                    uiOutput("fixo_subcategoria_ui")),
                                   conditionalPanel("input.fixo_tipo == 'Debito'",
-                                                   checkboxInput("fixo_dividir", "Dividir com meu amor", value=FALSE),
+                                                   checkboxInput("fixo_dividir", "Dividir com namorada?", value=FALSE),
                                                    conditionalPanel("input.fixo_dividir == true",
                                                                     sliderInput("fixo_divisao_pct", "% que ela paga",
                                                                                 min=5, max=100, value=50, step=5, post="%")
@@ -80,10 +83,13 @@ ui <- page_navbar(
                                 )
                            ),
                            card(
-                             card_header(layout_columns(col_widths=c(8,4),
+                             card_header(layout_columns(col_widths=c(6,3,3),
                                                         "Lancamentos fixos cadastrados",
                                                         div(style="text-align:right;",
-                                                            actionButton("excluir_fixo", "Excluir selecionado",
+                                                            actionButton("editar_fixo", "Editar",
+                                                                         class="btn-outline-primary btn-sm")),
+                                                        div(style="text-align:right;",
+                                                            actionButton("excluir_fixo", "Excluir",
                                                                          class="btn-outline-danger btn-sm")))),
                              card_body(DTOutput("tabela_fixos"))
                            )
@@ -135,9 +141,52 @@ ui <- page_navbar(
                              )
                            ),
                            card(
-                             card_header("Lancamentos divididos com meu amor"),
+                             card_header("Lancamentos divididos com a namorada"),
                              card_body(DTOutput("tabela_credito"))
+                           )
+            )
+  ),
+
+  nav_panel("Investimentos", icon = icon("chart-line"),
+            br(),
+            layout_columns(col_widths = c(4, 8),
+                           div(
+                             card(card_header("Novo investimento"),
+                                  card_body(
+                                    dateInput("invest_data", "Data do aporte", value=Sys.Date(),
+                                              format="dd/mm/yyyy", language="pt-BR"),
+                                    textInput("invest_descricao", "Descricao",
+                                              placeholder="Ex: Tesouro Selic, ETF, etc."),
+                                    selectInput("invest_tipo", "Tipo",
+                                                choices=c("Renda Fixa","Fundos","Acoes","Cripto","Outros")),
+                                    numericInput("invest_aportado", "Valor aportado (R$)",
+                                                 value=NULL, min=0.01, step=0.01),
+                                    numericInput("invest_atual", "Valor atual (R$)",
+                                                 value=NULL, min=0.01, step=0.01),
+                                    div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
+                                        "Se deixar 'Valor atual' em branco, assume o mesmo valor aportado."),
+                                    actionButton("adicionar_investimento", "Adicionar investimento",
+                                                 class="btn-primary w-100 mt-2", icon=icon("check"))
+                                  )
+                             ),
+                             br(),
+                             card(card_header("Resumo"),
+                                  card_body(uiOutput("resumo_investimentos")))
+                           ),
+                           card(
+                             card_header(layout_columns(col_widths=c(6,3,3),
+                                                        "Investimentos cadastrados",
+                                                        div(style="text-align:right;",
+                                                            actionButton("editar_investimento", "Editar",
+                                                                         class="btn-outline-primary btn-sm")),
+                                                        div(style="text-align:right;",
+                                                            actionButton("excluir_investimento", "Excluir",
+                                                                         class="btn-outline-danger btn-sm")))),
+                             card_body(DTOutput("tabela_investimentos"))
                            )
             )
   )
 )
+
+# Envolve a interface com a tela de login do shinymanager
+ui <- secure_app(ui_app, language = "pt")

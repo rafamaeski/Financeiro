@@ -1,7 +1,15 @@
 ## SERVER ##########################################
 server <- function(input, output, session) {
 
-  rv <- reactiveValues(df = carregar_dados(), fixos = carregar_fixos())
+  # Verifica login antes de liberar qualquer coisa do app
+  res_auth <- secure_server(check_credentials = check_credentials(CREDENCIAIS))
+
+  rv <- reactiveValues(df = carregar_dados(), fixos = carregar_fixos(),
+                        investimentos = carregar_investimentos())
+
+  editando_id       <- reactiveVal(NULL)
+  editando_fixo_id  <- reactiveVal(NULL)
+  editando_invest_id <- reactiveVal(NULL)
 
   # Subcategoria lancamento normal
   output$subcategoria_ui <- renderUI({
@@ -169,6 +177,82 @@ server <- function(input, output, session) {
     salvar_fixos(rv$fixos)
     showNotification("Fixo excluido.", type="message")
   })
+
+  # Editar fixo: abre modal preenchido com os dados da linha selecionada
+  observeEvent(input$editar_fixo, {
+    sel <- input$tabela_fixos_rows_selected
+    if (is.null(sel) || length(sel)==0) {
+      showNotification("Selecione uma linha para editar.", type="warning"); return()
+    }
+    linha <- rv$fixos %>% slice(sel)
+    editando_fixo_id(linha$id)
+
+    showModal(modalDialog(
+      title = "Editar lancamento fixo",
+      textInput("edit_fixo_descricao", "Descricao", value = linha$descricao),
+      selectInput("edit_fixo_tipo", "Tipo",
+                  choices = c("Debito","Receita Fixa","Receita Eventual"),
+                  selected = linha$tipo),
+      conditionalPanel("input.edit_fixo_tipo == 'Debito'",
+        selectInput("edit_fixo_categoria", "Categoria", choices=CATEGORIAS,
+                    selected = if (linha$categoria %in% CATEGORIAS) linha$categoria else CATEGORIAS[1]),
+        uiOutput("edit_fixo_subcategoria_ui")),
+      conditionalPanel("input.edit_fixo_tipo == 'Debito'",
+        checkboxInput("edit_fixo_dividir", "Dividir com namorada?", value = linha$divisao > 0),
+        conditionalPanel("input.edit_fixo_dividir == true",
+          sliderInput("edit_fixo_divisao_pct", "% que ela paga", min=5, max=100, step=5,
+                      value = if (linha$divisao > 0) linha$divisao else 50, post="%"))),
+      numericInput("edit_fixo_dia", "Dia do mes que cai", value = linha$dia, min=1, max=28, step=1),
+      dateInput("edit_fixo_ate", "Repetir ate o mes de", value = linha$ate_mes,
+                format="mm/yyyy", language="pt-BR"),
+      numericInput("edit_fixo_valor", "Valor (R$)", value = linha$valor, min=0.01, step=0.01),
+      div(class="alert alert-warning p-2 mt-2", style="font-size:.85rem;",
+          "Isso altera a regra do fixo dai pra frente. Lancamentos ja gerados em meses anteriores nao mudam."),
+      footer = tagList(
+        modalButton("Cancelar"),
+        actionButton("salvar_edicao_fixo", "Salvar", class="btn-primary")
+      )
+    ))
+  })
+
+  output$edit_fixo_subcategoria_ui <- renderUI({
+    req(input$edit_fixo_categoria)
+    choices <- if (input$edit_fixo_categoria == "Basico") SUBCATEGORIAS[1:5] else SUBCATEGORIAS[-c(1:5)]
+    sel <- isolate({
+      linha <- rv$fixos %>% filter(id == editando_fixo_id())
+      if (nrow(linha) > 0 && linha$subcategoria[1] %in% choices) linha$subcategoria[1] else choices[1]
+    })
+    selectInput("edit_fixo_subcategoria", "Subcategoria", choices=choices, selected=sel)
+  })
+
+  observeEvent(input$salvar_edicao_fixo, {
+    req(editando_fixo_id())
+    id_alvo <- editando_fixo_id()
+    if (is.na(input$edit_fixo_valor) || input$edit_fixo_valor <= 0) {
+      showNotification("Informe um valor maior que zero.", type="warning"); return()
+    }
+    rv$fixos <- rv$fixos %>%
+      mutate(
+        descricao = if_else(id == id_alvo, trimws(input$edit_fixo_descricao), descricao),
+        categoria = if_else(id == id_alvo,
+                             if (input$edit_fixo_tipo %in% receitas) "-" else input$edit_fixo_categoria,
+                             categoria),
+        subcategoria = if_else(id == id_alvo,
+                                if (input$edit_fixo_tipo %in% receitas) "Receita" else
+                                  if (is.null(input$edit_fixo_subcategoria)) "Outros" else input$edit_fixo_subcategoria,
+                                subcategoria),
+        tipo = if_else(id == id_alvo, input$edit_fixo_tipo, tipo),
+        dia = if_else(id == id_alvo, as.integer(input$edit_fixo_dia), dia),
+        ate_mes = if_else(id == id_alvo, as.Date(floor_date(input$edit_fixo_ate, "month")), ate_mes),
+        valor = if_else(id == id_alvo, as.numeric(input$edit_fixo_valor), valor),
+        divisao = if_else(id == id_alvo,
+                           if (input$edit_fixo_tipo == "Debito" && isTRUE(input$edit_fixo_dividir)) input$edit_fixo_divisao_pct else 0,
+                           divisao)
+      )
+    salvar_fixos(rv$fixos)
+    removeModal()
+    showNotification("Fixo atualizado!", type="message")
+  })
   
   # Excluir lancamento
   observeEvent(input$limpar_sel, {
@@ -180,6 +264,87 @@ server <- function(input, output, session) {
     rv$df <- filter(rv$df, !id %in% ids_excluir)
     salvar_dados(rv$df)
     showNotification("Lancamento excluido.", type="message")
+  })
+
+  # Editar lancamento: abre modal preenchido com os dados da linha selecionada
+  observeEvent(input$editar_sel, {
+    sel <- input$tabela_recente_rows_selected
+    if (is.null(sel) || length(sel)==0) {
+      showNotification("Selecione uma linha para editar.", type="warning"); return()
+    }
+    linha <- rv$df %>% arrange(desc(data), desc(id)) %>% slice(sel)
+    editando_id(linha$id)
+
+    showModal(modalDialog(
+      title = "Editar lancamento",
+      dateInput("edit_data", "Data", value = linha$data, format="dd/mm/yyyy", language="pt-BR"),
+      textInput("edit_descricao", "Descricao", value = linha$descricao),
+      selectInput("edit_tipo", "Tipo",
+                  choices = c("Debito","Credito","Receita Fixa","Receita Eventual"),
+                  selected = linha$tipo),
+      conditionalPanel("input.edit_tipo == 'Debito' || input.edit_tipo == 'Credito'",
+        selectInput("edit_categoria", "Categoria", choices=CATEGORIAS,
+                    selected = if (linha$categoria %in% CATEGORIAS) linha$categoria else CATEGORIAS[1]),
+        uiOutput("edit_subcategoria_ui")),
+      conditionalPanel("input.edit_tipo == 'Credito'",
+        selectInput("edit_cartao", "Tipo de Credito", choices=c("Cartao","Outros"),
+                    selected = if (linha$cartao %in% c("Cartao","Outros")) linha$cartao else "Cartao"),
+        dateInput("edit_vencimento", "Vencimento da fatura", value = linha$vencimento,
+                  format="dd/mm/yyyy", language="pt-BR")),
+      conditionalPanel("input.edit_tipo == 'Debito' || input.edit_tipo == 'Credito'",
+        checkboxInput("edit_dividir", "Dividir com namorada?", value = linha$divisao > 0),
+        conditionalPanel("input.edit_dividir == true",
+          sliderInput("edit_divisao_pct", "% que ela paga", min=5, max=100, step=5,
+                      value = if (linha$divisao > 0) linha$divisao else 50, post="%"))),
+      numericInput("edit_valor", "Valor (R$)", value = linha$valor, min=0.01, step=0.01),
+      footer = tagList(
+        modalButton("Cancelar"),
+        actionButton("salvar_edicao", "Salvar", class="btn-primary")
+      )
+    ))
+  })
+
+  output$edit_subcategoria_ui <- renderUI({
+    req(input$edit_categoria)
+    choices <- if (input$edit_categoria == "Basico") SUBCATEGORIAS[1:5] else SUBCATEGORIAS[-c(1:5)]
+    sel <- isolate({
+      linha <- rv$df %>% filter(id == editando_id())
+      if (nrow(linha) > 0 && linha$subcategoria[1] %in% choices) linha$subcategoria[1] else choices[1]
+    })
+    selectInput("edit_subcategoria", "Subcategoria", choices=choices, selected=sel)
+  })
+
+  observeEvent(input$salvar_edicao, {
+    req(editando_id())
+    id_alvo <- editando_id()
+    if (is.na(input$edit_valor) || input$edit_valor <= 0) {
+      showNotification("Informe um valor maior que zero.", type="warning"); return()
+    }
+    rv$df <- rv$df %>%
+      mutate(
+        data = if_else(id == id_alvo, as.Date(input$edit_data), data),
+        descricao = if_else(id == id_alvo, trimws(input$edit_descricao), descricao),
+        categoria = if_else(id == id_alvo,
+                             if (input$edit_tipo %in% receitas) "-" else input$edit_categoria,
+                             categoria),
+        subcategoria = if_else(id == id_alvo,
+                                if (input$edit_tipo %in% receitas) "Receita" else input$edit_subcategoria,
+                                subcategoria),
+        tipo = if_else(id == id_alvo, input$edit_tipo, tipo),
+        cartao = if_else(id == id_alvo,
+                          if (input$edit_tipo == "Credito") input$edit_cartao else "-",
+                          cartao),
+        vencimento = if_else(id == id_alvo,
+                              if (input$edit_tipo == "Credito") as.Date(input$edit_vencimento) else as.Date(input$edit_data),
+                              vencimento),
+        valor = if_else(id == id_alvo, as.numeric(input$edit_valor), valor),
+        divisao = if_else(id == id_alvo,
+                           if (input$edit_tipo %in% c("Debito","Credito") && isTRUE(input$edit_dividir)) input$edit_divisao_pct else 0,
+                           divisao)
+      )
+    salvar_dados(rv$df)
+    removeModal()
+    showNotification("Lancamento atualizado!", type="message")
   })
   
   # Tabela recente
@@ -378,7 +543,7 @@ server <- function(input, output, session) {
       hr(),
       div(class="card border-warning mb-2",
           div(class="card-body p-3",
-              tags$p(class="text-muted small mb-1", "Parte da Sara"),
+              tags$p(class="text-muted small mb-1", "Namorada te deve"),
               tags$h4(class="fw-bold text-warning mb-0", fmt_brl(total_ela)),
               tags$small(class="text-muted",
                          paste0(n_divididas, " conta(s) dividida(s)"))
@@ -418,5 +583,131 @@ server <- function(input, output, session) {
                           info="Mostrando _START_ a _END_ de _TOTAL_")),
         class = "stripe hover"
       )
+  })
+
+  # ── Investimentos ──────────────────────────────────────────
+
+  observeEvent(input$adicionar_investimento, {
+    req(input$invest_descricao, input$invest_aportado)
+    if (is.na(input$invest_aportado) || input$invest_aportado <= 0) {
+      showNotification("Informe um valor aportado maior que zero.", type="warning"); return()
+    }
+    valor_atual <- if (is.na(input$invest_atual) || input$invest_atual <= 0) {
+      input$invest_aportado
+    } else {
+      input$invest_atual
+    }
+
+    novo_invest <- tibble(
+      id = if (nrow(rv$investimentos)==0) 1L else max(rv$investimentos$id)+1L,
+      data = as.Date(input$invest_data),
+      descricao = trimws(input$invest_descricao),
+      tipo = input$invest_tipo,
+      valor_aportado = as.numeric(input$invest_aportado),
+      valor_atual = as.numeric(valor_atual)
+    )
+    rv$investimentos <- bind_rows(rv$investimentos, novo_invest)
+    salvar_investimentos(rv$investimentos)
+    showNotification(paste0("'", novo_invest$descricao, "' adicionado aos investimentos!"),
+                      type="message", duration=3)
+    updateTextInput(session, "invest_descricao", value="")
+    updateNumericInput(session, "invest_aportado", value=NA)
+    updateNumericInput(session, "invest_atual", value=NA)
+  })
+
+  observeEvent(input$excluir_investimento, {
+    sel <- input$tabela_investimentos_rows_selected
+    if (is.null(sel) || length(sel)==0) {
+      showNotification("Selecione uma linha para excluir.", type="warning"); return()
+    }
+    ids_excluir <- rv$investimentos %>% arrange(desc(data)) %>% slice(sel) %>% pull(id)
+    rv$investimentos <- filter(rv$investimentos, !id %in% ids_excluir)
+    salvar_investimentos(rv$investimentos)
+    showNotification("Investimento excluido.", type="message")
+  })
+
+  observeEvent(input$editar_investimento, {
+    sel <- input$tabela_investimentos_rows_selected
+    if (is.null(sel) || length(sel)==0) {
+      showNotification("Selecione uma linha para editar.", type="warning"); return()
+    }
+    linha <- rv$investimentos %>% arrange(desc(data)) %>% slice(sel)
+    editando_invest_id(linha$id)
+
+    showModal(modalDialog(
+      title = "Editar investimento",
+      dateInput("edit_invest_data", "Data do aporte", value = linha$data,
+                format="dd/mm/yyyy", language="pt-BR"),
+      textInput("edit_invest_descricao", "Descricao", value = linha$descricao),
+      selectInput("edit_invest_tipo", "Tipo",
+                  choices = c("Renda Fixa","Fundos","Acoes","Cripto","Outros"),
+                  selected = linha$tipo),
+      numericInput("edit_invest_aportado", "Valor aportado (R$)",
+                   value = linha$valor_aportado, min=0.01, step=0.01),
+      numericInput("edit_invest_atual", "Valor atual (R$)",
+                   value = linha$valor_atual, min=0.01, step=0.01),
+      footer = tagList(
+        modalButton("Cancelar"),
+        actionButton("salvar_edicao_investimento", "Salvar", class="btn-primary")
+      )
+    ))
+  })
+
+  observeEvent(input$salvar_edicao_investimento, {
+    req(editando_invest_id())
+    id_alvo <- editando_invest_id()
+    if (is.na(input$edit_invest_aportado) || input$edit_invest_aportado <= 0) {
+      showNotification("Informe um valor aportado maior que zero.", type="warning"); return()
+    }
+    rv$investimentos <- rv$investimentos %>%
+      mutate(
+        data = if_else(id == id_alvo, as.Date(input$edit_invest_data), data),
+        descricao = if_else(id == id_alvo, trimws(input$edit_invest_descricao), descricao),
+        tipo = if_else(id == id_alvo, input$edit_invest_tipo, tipo),
+        valor_aportado = if_else(id == id_alvo, as.numeric(input$edit_invest_aportado), valor_aportado),
+        valor_atual = if_else(id == id_alvo, as.numeric(input$edit_invest_atual), valor_atual)
+      )
+    salvar_investimentos(rv$investimentos)
+    removeModal()
+    showNotification("Investimento atualizado!", type="message")
+  })
+
+  output$tabela_investimentos <- renderDT({
+    rv$investimentos %>%
+      arrange(desc(data)) %>%
+      mutate(
+        Data = format(data, "%d/%m/%Y"),
+        `Aportado (R$)` = fmt_brl(valor_aportado),
+        `Atual (R$)` = fmt_brl(valor_atual),
+        Rentabilidade = paste0(round((valor_atual/valor_aportado - 1) * 100, 1), "%")
+      ) %>%
+      select(Data, Descricao=descricao, Tipo=tipo,
+             `Aportado (R$)`, `Atual (R$)`, Rentabilidade) %>%
+      datatable(selection="single", rownames=FALSE,
+                options=list(dom="tp", pageLength=15,
+                             language=list(
+                               paginate=list(previous="Ant", `next`="Pro"),
+                               info="Mostrando _START_ a _END_ de _TOTAL_")))
+  })
+
+  output$resumo_investimentos <- renderUI({
+    df <- rv$investimentos
+    total_aportado <- sum(df$valor_aportado, na.rm=TRUE)
+    total_atual    <- sum(df$valor_atual, na.rm=TRUE)
+    rentab <- if (total_aportado > 0) (total_atual / total_aportado - 1) * 100 else 0
+
+    kpi <- function(label, val, cor) {
+      div(class="mb-3",
+          tags$small(class="text-muted", label),
+          tags$h5(class=paste("fw-bold", cor), val))
+    }
+    tagList(
+      kpi("Total aportado", fmt_brl(total_aportado), "text-dark"),
+      kpi("Valor atual", fmt_brl(total_atual), "text-primary"),
+      kpi("Rentabilidade", paste0(round(rentab, 1), "%"),
+          if (rentab >= 0) "text-success" else "text-danger"),
+      hr(),
+      tags$small(class="text-muted", paste0(nrow(df), " investimento(s) cadastrado(s)"))
+    )
   })
 }

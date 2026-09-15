@@ -8,6 +8,19 @@ library(DT)
 library(lubridate)
 library(DBI)
 library(RPostgres)
+library(shinymanager)
+
+## ── Login do app ──────────────────────────────────────────────────────
+# No Connect Cloud, configure em Settings > Environment Variables:
+#   APP_USER     -> nome de usuario para login
+#   APP_PASSWORD -> senha para login
+# Se essas variaveis nao existirem (ex: rodando localmente com runApp()),
+# usa um usuario/senha padrao soh para nao travar o desenvolvimento local.
+CREDENCIAIS <- data.frame(
+  user     = Sys.getenv("APP_USER", "admin"),
+  password = Sys.getenv("APP_PASSWORD", "admin"),
+  stringsAsFactors = FALSE
+)
 
 DATA_FILE  <- "lancamentos.rds"
 FIXOS_FILE <- "fixos.rds"
@@ -134,6 +147,50 @@ salvar_fixos <- function(df) {
     if (nrow(df) > 0) dbAppendTable(con, "fixos", df)
   } else {
     saveRDS(df, FIXOS_FILE)
+  }
+}
+
+## ── Investimentos ────────────────────────────────────────────────────
+INVEST_FILE <- "investimentos.rds"
+
+carregar_investimentos <- function() {
+  if (USA_SUPABASE) {
+    df <- tryCatch({
+      con <- conectar_db()
+      on.exit(dbDisconnect(con))
+      dbGetQuery(con, "SELECT * FROM investimentos ORDER BY id")
+    }, error = function(e) NULL)
+
+    if (is.null(df) || nrow(df) == 0) {
+      tibble(
+        id = integer(), data = as.Date(character()),
+        descricao = character(), tipo = character(),
+        valor_aportado = numeric(), valor_atual = numeric()
+      )
+    } else {
+      df <- as_tibble(df)
+      df$data <- as.Date(df$data)
+      df
+    }
+  } else if (file.exists(INVEST_FILE)) {
+    readRDS(INVEST_FILE)
+  } else {
+    tibble(
+      id = integer(), data = as.Date(character()),
+      descricao = character(), tipo = character(),
+      valor_aportado = numeric(), valor_atual = numeric()
+    )
+  }
+}
+
+salvar_investimentos <- function(df) {
+  if (USA_SUPABASE) {
+    con <- conectar_db()
+    on.exit(dbDisconnect(con))
+    dbExecute(con, "DELETE FROM investimentos")
+    if (nrow(df) > 0) dbAppendTable(con, "investimentos", df)
+  } else {
+    saveRDS(df, INVEST_FILE)
   }
 }
 
