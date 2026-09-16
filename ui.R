@@ -163,10 +163,11 @@ ui_app <- page_navbar(
                                 card_body(
                                   dateInput("invest_data", "Data do aporte", value=Sys.Date(),
                                             format="dd/mm/yyyy", language="pt-BR"),
-                                  textInput("invest_descricao", "Descricao",
+                                  textInput("invest_descricao", "Descrição",
                                             placeholder="Ex: Tesouro Selic, ETF, etc."),
                                   selectInput("invest_tipo", "Tipo",
-                                              choices=c("Renda Fixa","Fundos","Acoes","Cripto","Outros")),
+                                              choices=c("Renda Fixa","Fundos", "Reserva",
+                                                        "Ações","Cripto","Outros")),
                                   numericInput("invest_aportado", "Valor aportado (R$)",
                                                value=NULL, min=0.01, step=0.01),
                                   numericInput("invest_atual", "Valor atual (R$)",
@@ -178,9 +179,8 @@ ui_app <- page_navbar(
                                 )
                            ),
                            layout_columns(col_widths = c(6, 6),
-                                          card(
-                                            card_header(layout_columns(col_widths=c(6,3,3),
-                                                                       "Investimentos cadastrados",
+                                          div(card(card_header(layout_columns(col_widths=c(9,9),
+                                                                       "Meus Investimentos",
                                                                        div(style="text-align:right;",
                                                                            actionButton("editar_investimento", "Editar",
                                                                                         class="btn-outline-primary btn-sm")),
@@ -189,8 +189,9 @@ ui_app <- page_navbar(
                                                                                         class="btn-outline-danger btn-sm")))),
                                             card_body(DTOutput("tabela_investimentos"))
                                           ),
-                                          card(card_header("Resumo — Distribuicao por tipo"),
+                                          card(card_header("Alocação por Tipo"),
                                                card_body(plotOutput("graf_investimentos", height="420px")))
+                                          )
                            )
             )
   )
