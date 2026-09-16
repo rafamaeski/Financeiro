@@ -706,7 +706,6 @@ server <- function(input, output, session) {
       mutate(pct = total / sum(total)) %>%
       ggplot(aes(x="", y=total, fill=tipo)) +
       geom_col(width=1, color="white") +
-      coord_polar("y") +
       geom_text(aes(label=paste0(scales::percent(pct, accuracy=1))),
                 position=position_stack(vjust=0.5), size=4.5, color="#2c3e50", fontface="bold") +
       scale_fill_manual(values=CORES_INVEST, name="Tipo") +
