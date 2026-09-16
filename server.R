@@ -703,18 +703,18 @@ server <- function(input, output, session) {
     df %>%
       group_by(tipo) %>%
       summarise(total = sum(valor_aportado), .groups="drop") %>%
-      mutate(pct = total / sum(total)) %>%
-      ggplot(aes(x="", y=total, fill=tipo)) +
-      geom_col(width=1, color="white") +
-      geom_text(aes(label=paste0(scales::percent(pct, accuracy=1))),
-                position=position_stack(vjust=0.5), size=4.5, color="#2c3e50", fontface="bold") +
-      scale_fill_manual(values=CORES_INVEST, name="Tipo") +
-      labs(title=paste0("Total investido: ", fmt_brl(sum(df$valor_aportado, na.rm=TRUE)))) +
-      theme_void() +
-      theme(
-        plot.title = element_text(face="bold", size=13, color="#2c3e50", hjust=0.5),
-        legend.position = "bottom",
-        legend.title = element_text(face="bold")
-      )
+      arrange(total) %>%
+      mutate(tipo = factor(tipo, levels=tipo),
+             pct = total / sum(total)) %>%
+      ggplot(aes(x=tipo, y=total, fill=tipo)) +
+      geom_col(width=0.65, show.legend=FALSE) +
+      geom_text(aes(label=paste0(fmt_brl(total), " (", scales::percent(pct, accuracy=1), ")")),
+                hjust=-0.05, size=3.4, color="#333") +
+      scale_fill_manual(values=CORES_INVEST) +
+      scale_y_continuous(expand=expansion(mult=c(0,.35))) +
+      coord_flip() +
+      labs(x=NULL, y="R$",
+           title=paste0("Total investido: ", fmt_brl(sum(df$valor_aportado, na.rm=TRUE)))) +
+      tema_app
   })
 }

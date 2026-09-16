@@ -16,7 +16,7 @@ ui_app <- page_navbar(
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
-            layout_columns(col_widths = c(4, 8),
+            layout_columns(col_widths = c(3, 9),
                            card(card_header("Novo lancamento"),
                                 card_body(
                                   dateInput("data", "Data", value=Sys.Date(), format="dd/mm/yyyy", language="pt-BR"),
@@ -159,41 +159,39 @@ ui_app <- page_navbar(
   nav_panel("Investimentos", icon = icon("chart-line"),
             br(),
             layout_columns(col_widths = c(3, 9),
-                           div(
-                             card(card_header("Novo investimento"),
-                                  card_body(
-                                    dateInput("invest_data", "Data do aporte", value=Sys.Date(),
-                                              format="dd/mm/yyyy", language="pt-BR"),
-                                    textInput("invest_descricao", "Descricao",
-                                              placeholder="Ex: Tesouro Selic, ETF, etc."),
-                                    selectInput("invest_tipo", "Tipo",
-                                                choices=c("Renda Fixa",
-                                                          "Fundos","Acoes","Reserva","Outros")),
-                                    numericInput("invest_aportado", "Valor aportado (R$)",
-                                                 value=NULL, min=0.01, step=0.01),
-                                    numericInput("invest_atual", "Valor atual (R$)",
-                                                 value=NULL, min=0.01, step=0.01),
-                                    div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
-                                        "Se deixar 'Valor atual' em branco, assume o mesmo valor aportado."),
-                                    actionButton("adicionar_investimento", "Adicionar investimento",
-                                                 class="btn-primary w-100 mt-2", icon=icon("check"))
-                                  )
-                             ),
-                             br(),
-                             card(
-                               card_header(layout_columns(col_widths=c(6,3,3),
-                                                          "Investimentos cadastrados",
-                                                          div(style="text-align:right;",
-                                                              actionButton("editar_investimento", "Editar",
-                                                                           class="btn-outline-primary btn-sm")),
-                                                          div(style="text-align:right;",
-                                                              actionButton("excluir_investimento", "Excluir",
-                                                                           class="btn-outline-danger btn-sm")))),
-                               card_body(DTOutput("tabela_investimentos"))
-                             )
+                           card(card_header("Novo investimento"),
+                                card_body(
+                                  dateInput("invest_data", "Data do aporte", value=Sys.Date(),
+                                            format="dd/mm/yyyy", language="pt-BR"),
+                                  textInput("invest_descricao", "Descricao",
+                                            placeholder="Ex: Tesouro Selic, ETF, etc."),
+                                  selectInput("invest_tipo", "Tipo",
+                                              choices=c("Renda Fixa","Fundos","Acoes","Cripto","Outros")),
+                                  numericInput("invest_aportado", "Valor aportado (R$)",
+                                               value=NULL, min=0.01, step=0.01),
+                                  numericInput("invest_atual", "Valor atual (R$)",
+                                               value=NULL, min=0.01, step=0.01),
+                                  div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
+                                      "Se deixar 'Valor atual' em branco, assume o mesmo valor aportado."),
+                                  actionButton("adicionar_investimento", "Adicionar investimento",
+                                               class="btn-primary w-100 mt-2", icon=icon("check"))
+                                )
                            ),
-                           card(card_header("Resumo — Distribuicao por tipo"),
-                                card_body(plotOutput("graf_investimentos", height="420px")))
+                           layout_columns(col_widths = c(6, 6),
+                                          card(
+                                            card_header(layout_columns(col_widths=c(6,3,3),
+                                                                       "Investimentos cadastrados",
+                                                                       div(style="text-align:right;",
+                                                                           actionButton("editar_investimento", "Editar",
+                                                                                        class="btn-outline-primary btn-sm")),
+                                                                       div(style="text-align:right;",
+                                                                           actionButton("excluir_investimento", "Excluir",
+                                                                                        class="btn-outline-danger btn-sm")))),
+                                            card_body(DTOutput("tabela_investimentos"))
+                                          ),
+                                          card(card_header("Resumo — Distribuicao por tipo"),
+                                               card_body(plotOutput("graf_investimentos", height="420px")))
+                           )
             )
   )
 )
