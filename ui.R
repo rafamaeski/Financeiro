@@ -6,6 +6,13 @@ ui_app <- page_navbar(
                    success="#3fae6a", danger="#d1495b", info="#35c4d9",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
   bg = "#2ba9e0", inverse = TRUE,
+  header = tags$style(HTML("
+    .navbar .nav-link.active,
+    .navbar .nav-link.show {
+      color: #0d3350 !important;
+      font-weight: 700;
+    }
+  ")),
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
