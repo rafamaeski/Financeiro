@@ -178,8 +178,8 @@ ui_app <- page_navbar(
                                                class="btn-primary w-100 mt-2", icon=icon("check"))
                                 )
                            ),
-                           layout_columns(col_widths = c(6, 6),
-                                          div(card(card_header(layout_columns(col_widths=c(9,9),
+                           layout_columns(col_widths = c(9, 9),
+                                          div(card(card_header(layout_columns(col_widths=c(6,6),
                                                                        "Meus Investimentos",
                                                                        div(style="text-align:right;",
                                                                            actionButton("editar_investimento", "Editar",
