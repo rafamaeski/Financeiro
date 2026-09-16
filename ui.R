@@ -16,7 +16,7 @@ ui_app <- page_navbar(
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
-            layout_columns(col_widths = c(5, 7),
+            layout_columns(col_widths = c(4, 8),
                            card(card_header("Novo lancamento"),
                                 card_body(
                                   dateInput("data", "Data", value=Sys.Date(), format="dd/mm/yyyy", language="pt-BR"),
@@ -167,7 +167,8 @@ ui_app <- page_navbar(
                                     textInput("invest_descricao", "Descricao",
                                               placeholder="Ex: Tesouro Selic, ETF, etc."),
                                     selectInput("invest_tipo", "Tipo",
-                                                choices=c("Renda Fixa","Fundos","Acoes","Cripto","Outros")),
+                                                choices=c("Renda Fixa",
+                                                          "Fundos","Acoes","Reserva","Outros")),
                                     numericInput("invest_aportado", "Valor aportado (R$)",
                                                  value=NULL, min=0.01, step=0.01),
                                     numericInput("invest_atual", "Valor atual (R$)",
