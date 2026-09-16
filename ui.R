@@ -179,7 +179,7 @@ ui_app <- page_navbar(
                                 )
                            ),
                            layout_columns(col_widths = c(9, 9),
-                                          div(card(card_header(layout_columns(col_widths=c(6,6),
+                                          div(card(card_header(layout_columns(col_widths=c(9,9),
                                                                        "Meus Investimentos",
                                                                        div(style="text-align:right;",
                                                                            actionButton("editar_investimento", "Editar",
@@ -187,10 +187,10 @@ ui_app <- page_navbar(
                                                                        div(style="text-align:right;",
                                                                            actionButton("excluir_investimento", "Excluir",
                                                                                         class="btn-outline-danger btn-sm")))),
-                                            card_body(DTOutput("tabela_investimentos"))
-                                          ),
-                                          card(card_header("Alocação por Tipo"),
-                                               card_body(plotOutput("graf_investimentos", height="420px")))
+                                              card_header("Alocação por Tipo"),
+                                                   card_body(plotOutput("graf_investimentos", height="420px"))
+                                              ),
+                                          card(card_body(DTOutput("tabela_investimentos")))
                                           )
                            )
             )
