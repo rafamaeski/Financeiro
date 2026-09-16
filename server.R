@@ -707,7 +707,7 @@ server <- function(input, output, session) {
       mutate(tipo = factor(tipo, levels=tipo),
              pct = total / sum(total)) %>%
       ggplot(aes(x=tipo, y=total, fill=tipo)) +
-      geom_col(width=0.65, show.legend=FALSE) +
+      geom_col(width=0.65, show.legend=FALSE, position = "dodge") +
       geom_text(aes(label=paste0(fmt_brl(total), " (", scales::percent(pct, accuracy=1), ")")),
                 hjust=-0.05, size=3.4, color="#333") +
       scale_fill_manual(values=CORES_INVEST) +
