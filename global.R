@@ -165,20 +165,25 @@ carregar_investimentos <- function() {
       tibble(
         id = integer(), data = as.Date(character()),
         descricao = character(), tipo = character(),
-        valor_aportado = numeric(), valor_atual = numeric()
+        valor_aportado = numeric(), rentabilidade_aa = numeric(),
+        valor_atual = numeric()
       )
     } else {
       df <- as_tibble(df)
       df$data <- as.Date(df$data)
+      if (!"rentabilidade_aa" %in% names(df)) df$rentabilidade_aa <- 0
       df
     }
   } else if (file.exists(INVEST_FILE)) {
-    readRDS(INVEST_FILE)
+    df <- readRDS(INVEST_FILE)
+    if (!"rentabilidade_aa" %in% names(df)) df$rentabilidade_aa <- 0
+    df
   } else {
     tibble(
       id = integer(), data = as.Date(character()),
       descricao = character(), tipo = character(),
-      valor_aportado = numeric(), valor_atual = numeric()
+      valor_aportado = numeric(), rentabilidade_aa = numeric(),
+      valor_atual = numeric()
     )
   }
 }
@@ -192,6 +197,22 @@ salvar_investimentos <- function(df) {
   } else {
     saveRDS(df, INVEST_FILE)
   }
+}
+
+# Valor estimado na data de referencia (padrao hoje), via juros compostos
+# com base na rentabilidade ao ano. Se valor_atual (override manual) estiver
+# preenchido, ele prevalece sobre a estimativa.
+calcular_valor_estimado <- function(valor_aportado, rentabilidade_aa, data_aporte,
+                                     valor_atual = NA_real_, data_ref = Sys.Date()) {
+  dplyr::if_else(
+    !is.na(valor_atual),
+    valor_atual,
+    dplyr::if_else(
+      is.na(rentabilidade_aa) | rentabilidade_aa == 0,
+      valor_aportado,
+      valor_aportado * (1 + rentabilidade_aa/100) ^ (as.numeric(data_ref - data_aporte) / 365)
+    )
+  )
 }
 
 CATEGORIAS   <- c("Basico", "Extras")

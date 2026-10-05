@@ -598,11 +598,12 @@ server <- function(input, output, session) {
     if (is.na(input$invest_aportado) || input$invest_aportado <= 0) {
       showNotification("Informe um valor aportado maior que zero.", type="warning"); return()
     }
-    valor_atual <- if (is.na(input$invest_atual) || input$invest_atual <= 0) {
-      input$invest_aportado
+    valor_atual_manual <- if (is.na(input$invest_atual) || input$invest_atual <= 0) {
+      NA_real_
     } else {
-      input$invest_atual
+      as.numeric(input$invest_atual)
     }
+    rentab <- if (is.na(input$invest_rentabilidade)) 0 else as.numeric(input$invest_rentabilidade)
 
     novo_invest <- tibble(
       id = if (nrow(rv$investimentos)==0) 1L else max(rv$investimentos$id)+1L,
@@ -610,7 +611,8 @@ server <- function(input, output, session) {
       descricao = trimws(input$invest_descricao),
       tipo = input$invest_tipo,
       valor_aportado = as.numeric(input$invest_aportado),
-      valor_atual = as.numeric(valor_atual)
+      rentabilidade_aa = rentab,
+      valor_atual = valor_atual_manual
     )
     rv$investimentos <- bind_rows(rv$investimentos, novo_invest)
     salvar_investimentos(rv$investimentos)
@@ -618,6 +620,7 @@ server <- function(input, output, session) {
                       type="message", duration=3)
     updateTextInput(session, "invest_descricao", value="")
     updateNumericInput(session, "invest_aportado", value=NA)
+    updateNumericInput(session, "invest_rentabilidade", value=NA)
     updateNumericInput(session, "invest_atual", value=NA)
   })
 
@@ -650,8 +653,14 @@ server <- function(input, output, session) {
                   selected = linha$tipo),
       numericInput("edit_invest_aportado", "Valor aportado (R$)",
                    value = linha$valor_aportado, min=0.01, step=0.01),
-      numericInput("edit_invest_atual", "Valor atual (R$)",
-                   value = linha$valor_atual, min=0.01, step=0.01),
+      numericInput("edit_invest_rentabilidade", "Rentabilidade (% ao ano)",
+                   value = if (is.na(linha$rentabilidade_aa)) NA else linha$rentabilidade_aa,
+                   min=-100, max=1000, step=0.1),
+      numericInput("edit_invest_atual", "Valor atual - manual (R$, opcional)",
+                   value = if (is.na(linha$valor_atual)) NA else linha$valor_atual,
+                   min=0.01, step=0.01),
+      div(class="alert alert-info p-2", style="font-size:.85rem;",
+          "Deixe 'Valor atual' em branco para usar a estimativa pela rentabilidade."),
       footer = tagList(
         modalButton("Cancelar"),
         actionButton("salvar_edicao_investimento", "Salvar", class="btn-primary")
@@ -665,30 +674,117 @@ server <- function(input, output, session) {
     if (is.na(input$edit_invest_aportado) || input$edit_invest_aportado <= 0) {
       showNotification("Informe um valor aportado maior que zero.", type="warning"); return()
     }
+    rentab <- if (is.na(input$edit_invest_rentabilidade)) 0 else as.numeric(input$edit_invest_rentabilidade)
+    valor_atual_manual <- if (is.na(input$edit_invest_atual) || input$edit_invest_atual <= 0) {
+      NA_real_
+    } else {
+      as.numeric(input$edit_invest_atual)
+    }
     rv$investimentos <- rv$investimentos %>%
       mutate(
         data = if_else(id == id_alvo, as.Date(input$edit_invest_data), data),
         descricao = if_else(id == id_alvo, trimws(input$edit_invest_descricao), descricao),
         tipo = if_else(id == id_alvo, input$edit_invest_tipo, tipo),
         valor_aportado = if_else(id == id_alvo, as.numeric(input$edit_invest_aportado), valor_aportado),
-        valor_atual = if_else(id == id_alvo, as.numeric(input$edit_invest_atual), valor_atual)
+        rentabilidade_aa = if_else(id == id_alvo, rentab, rentabilidade_aa),
+        valor_atual = if_else(id == id_alvo, valor_atual_manual, valor_atual)
       )
     salvar_investimentos(rv$investimentos)
     removeModal()
     showNotification("Investimento atualizado!", type="message")
   })
 
+  # Resgate: abre modal pra escolher valor e data do resgate
+  observeEvent(input$resgatar_investimento, {
+    sel <- input$tabela_investimentos_rows_selected
+    if (is.null(sel) || length(sel)==0) {
+      showNotification("Selecione uma linha para resgatar.", type="warning"); return()
+    }
+    linha <- rv$investimentos %>% arrange(desc(data)) %>% slice(sel)
+    editando_invest_id(linha$id)
+
+    valor_disponivel <- calcular_valor_estimado(linha$valor_aportado, linha$rentabilidade_aa,
+                                                 linha$data, linha$valor_atual)
+
+    showModal(modalDialog(
+      title = paste0("Resgatar — ", linha$descricao),
+      div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
+          paste0("Valor estimado disponivel hoje: ", fmt_brl(valor_disponivel))),
+      dateInput("resgate_data", "Data do resgate", value=Sys.Date(),
+                format="dd/mm/yyyy", language="pt-BR"),
+      numericInput("resgate_valor", "Valor a resgatar (R$)",
+                   value = round(valor_disponivel, 2), min=0.01, step=0.01),
+      div(class="alert alert-warning p-2", style="font-size:.85rem;",
+          "Isso cria automaticamente um lancamento de Receita Eventual na aba Lancar. Se o valor resgatado cobrir o total disponivel, o investimento e removido da lista; caso contrario, o valor aportado restante e reduzido proporcionalmente."),
+      footer = tagList(
+        modalButton("Cancelar"),
+        actionButton("confirmar_resgate", "Confirmar resgate", class="btn-warning")
+      )
+    ))
+  })
+
+  observeEvent(input$confirmar_resgate, {
+    req(editando_invest_id())
+    id_alvo <- editando_invest_id()
+    linha <- rv$investimentos %>% filter(id == id_alvo)
+    if (nrow(linha) == 0) { removeModal(); return() }
+
+    if (is.na(input$resgate_valor) || input$resgate_valor <= 0) {
+      showNotification("Informe um valor de resgate maior que zero.", type="warning"); return()
+    }
+
+    valor_disponivel <- calcular_valor_estimado(linha$valor_aportado, linha$rentabilidade_aa,
+                                                 linha$data, linha$valor_atual)
+    valor_resgate <- min(input$resgate_valor, valor_disponivel)
+
+    # Cria o lancamento de Receita Eventual automaticamente
+    novo_lanc <- tibble(
+      id = if (nrow(rv$df)==0) 1L else max(rv$df$id)+1L,
+      data = as.Date(input$resgate_data),
+      descricao = paste0("Resgate - ", linha$descricao),
+      categoria = "-",
+      subcategoria = "Receita",
+      tipo = "Receita Eventual",
+      cartao = "-",
+      vencimento = as.Date(input$resgate_data),
+      valor = as.numeric(valor_resgate),
+      origem = "manual",
+      divisao = 0
+    )
+    rv$df <- bind_rows(rv$df, novo_lanc)
+    salvar_dados(rv$df)
+
+    # Atualiza ou remove o investimento
+    if (valor_resgate >= valor_disponivel - 0.005) {
+      rv$investimentos <- filter(rv$investimentos, id != id_alvo)
+    } else {
+      fracao_restante <- 1 - (valor_resgate / valor_disponivel)
+      rv$investimentos <- rv$investimentos %>%
+        mutate(
+          valor_aportado = if_else(id == id_alvo, valor_aportado * fracao_restante, valor_aportado),
+          valor_atual = if_else(id == id_alvo & !is.na(valor_atual), valor_atual * fracao_restante, valor_atual)
+        )
+    }
+    salvar_investimentos(rv$investimentos)
+    removeModal()
+    showNotification(paste0("Resgate de ", fmt_brl(valor_resgate), " lancado em Receita Eventual!"),
+                      type="message", duration=5)
+  })
+
   output$tabela_investimentos <- renderDT({
     rv$investimentos %>%
       arrange(desc(data)) %>%
       mutate(
+        valor_estimado = calcular_valor_estimado(valor_aportado, rentabilidade_aa, data, valor_atual),
         Data = format(data, "%d/%m/%Y"),
         `Aportado (R$)` = fmt_brl(valor_aportado),
-        `Atual (R$)` = fmt_brl(valor_atual),
-        Rentabilidade = paste0(round((valor_atual/valor_aportado - 1) * 100, 1), "%")
+        `Rentab. (% a.a.)` = if_else(is.na(rentabilidade_aa) | rentabilidade_aa == 0, "-",
+                                      paste0(rentabilidade_aa, "%")),
+        `Estimado hoje (R$)` = fmt_brl(valor_estimado),
+        `Rentab. acumulada` = paste0(round((valor_estimado/valor_aportado - 1) * 100, 1), "%")
       ) %>%
       select(Data, Descricao=descricao, Tipo=tipo,
-             `Aportado (R$)`, `Atual (R$)`, Rentabilidade) %>%
+             `Aportado (R$)`, `Rentab. (% a.a.)`, `Estimado hoje (R$)`, `Rentab. acumulada`) %>%
       datatable(selection="single", rownames=FALSE,
                 options=list(dom="tp", pageLength=15,
                              language=list(
@@ -707,7 +803,7 @@ server <- function(input, output, session) {
       mutate(tipo = factor(tipo, levels=tipo),
              pct = total / sum(total)) %>%
       ggplot(aes(x=tipo, y=total, fill=tipo)) +
-      geom_col(width=0.65, show.legend=FALSE, position = "dodge") +
+      geom_col(width=0.65, show.legend=FALSE) +
       geom_text(aes(label=paste0(fmt_brl(total), " (", scales::percent(pct, accuracy=1), ")")),
                 hjust=-0.05, size=3.4, color="#333") +
       scale_fill_manual(values=CORES_INVEST) +

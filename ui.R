@@ -163,35 +163,41 @@ ui_app <- page_navbar(
                                 card_body(
                                   dateInput("invest_data", "Data do aporte", value=Sys.Date(),
                                             format="dd/mm/yyyy", language="pt-BR"),
-                                  textInput("invest_descricao", "Descrição",
+                                  textInput("invest_descricao", "Descricao",
                                             placeholder="Ex: Tesouro Selic, ETF, etc."),
                                   selectInput("invest_tipo", "Tipo",
-                                              choices=c("Renda Fixa","Fundos", "Reserva",
-                                                        "Ações","Cripto","Outros")),
+                                              choices=c("Renda Fixa","Fundos","Acoes","Cripto","Outros")),
                                   numericInput("invest_aportado", "Valor aportado (R$)",
                                                value=NULL, min=0.01, step=0.01),
-                                  numericInput("invest_atual", "Valor atual (R$)",
-                                               value=NULL, min=0.01, step=0.01),
+                                  numericInput("invest_rentabilidade", "Rentabilidade (% ao ano)",
+                                               value=NULL, min=-100, max=1000, step=0.1),
                                   div(class="alert alert-info p-2 mb-2", style="font-size:.85rem;",
-                                      "Se deixar 'Valor atual' em branco, assume o mesmo valor aportado."),
+                                      "Com a rentabilidade preenchida, o valor estimado para hoje e calculado automaticamente (juros compostos pelos dias desde o aporte)."),
+                                  numericInput("invest_atual", "Valor atual - manual (R$)",
+                                               value=NULL, min=0.01, step=0.01),
+                                  div(class="alert alert-warning p-2 mb-2", style="font-size:.85rem;",
+                                      "Preencha 'Valor atual' so se quiser sobrescrever a estimativa com um valor real (ex: extrato da corretora). Deixe em branco para usar a estimativa pela rentabilidade."),
                                   actionButton("adicionar_investimento", "Adicionar investimento",
                                                class="btn-primary w-100 mt-2", icon=icon("check"))
                                 )
                            ),
-                           div(card(card_header("Resumo — Distribuicao por tipo"),
-                                   card_body(plotOutput("graf_investimentos", height="420px"))),
-                              br(),
-                              card(
-                                card_header(layout_columns(col_widths=c(6,3,3),
-                                                           "Investimentos cadastrados",
-                                                           div(style="text-align:right;",
-                                                               actionButton("editar_investimento", "Editar",
-                                                                            class="btn-outline-primary btn-sm")),
-                                                           div(style="text-align:right;",
-                                                               actionButton("excluir_investimento", "Excluir",
-                                                                            class="btn-outline-danger btn-sm")))),
-                                card_body(DTOutput("tabela_investimentos"))
-                              )
+                           layout_columns(col_widths = c(6, 6),
+                                          card(
+                                            card_header(layout_columns(col_widths=c(5,2,3,2),
+                                                                       "Investimentos cadastrados",
+                                                                       div(style="text-align:right;",
+                                                                           actionButton("editar_investimento", "Editar",
+                                                                                        class="btn-outline-primary btn-sm")),
+                                                                       div(style="text-align:right;",
+                                                                           actionButton("resgatar_investimento", "Resgatar",
+                                                                                        class="btn-outline-warning btn-sm")),
+                                                                       div(style="text-align:right;",
+                                                                           actionButton("excluir_investimento", "Excluir",
+                                                                                        class="btn-outline-danger btn-sm")))),
+                                            card_body(DTOutput("tabela_investimentos"))
+                                          ),
+                                          card(card_header("Resumo — Distribuicao por tipo"),
+                                               card_body(plotOutput("graf_investimentos", height="420px")))
                            )
             )
   )
