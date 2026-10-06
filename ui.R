@@ -181,23 +181,24 @@ ui_app <- page_navbar(
                                                class="btn-primary w-100 mt-2", icon=icon("check"))
                                 )
                            ),
-                           layout_columns(col_widths = c(6, 6),
-                                          card(
-                                            card_header(layout_columns(col_widths=c(5,2,3,2),
-                                                                       "Investimentos cadastrados",
-                                                                       div(style="text-align:right;",
-                                                                           actionButton("editar_investimento", "Editar",
-                                                                                        class="btn-outline-primary btn-sm")),
-                                                                       div(style="text-align:right;",
-                                                                           actionButton("resgatar_investimento", "Resgatar",
-                                                                                        class="btn-outline-warning btn-sm")),
-                                                                       div(style="text-align:right;",
-                                                                           actionButton("excluir_investimento", "Excluir",
-                                                                                        class="btn-outline-danger btn-sm")))),
-                                            card_body(DTOutput("tabela_investimentos"))
-                                          ),
-                                          card(card_header("Resumo — Distribuicao por tipo"),
-                                               card_body(plotOutput("graf_investimentos", height="420px")))
+                           div(
+                             card(card_header("Resumo — Distribuicao por tipo"),
+                                  card_body(plotOutput("graf_investimentos", height="420px"))),
+                             br(),
+                             card(
+                               card_header(layout_columns(col_widths=c(5,2,3,2),
+                                                          "Investimentos cadastrados",
+                                                          div(style="text-align:right;",
+                                                              actionButton("editar_investimento", "Editar",
+                                                                           class="btn-outline-primary btn-sm")),
+                                                          div(style="text-align:right;",
+                                                              actionButton("resgatar_investimento", "Resgatar",
+                                                                           class="btn-outline-warning btn-sm")),
+                                                          div(style="text-align:right;",
+                                                              actionButton("excluir_investimento", "Excluir",
+                                                                           class="btn-outline-danger btn-sm")))),
+                               card_body(DTOutput("tabela_investimentos"))
+                             )
                            )
             )
   )
