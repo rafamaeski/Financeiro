@@ -2467,16 +2467,16 @@
       "checksum": "ddda1fdac3e7b329b856dffc8bc6882d"
     },
     "global.R": {
-      "checksum": "16eee6f68ee2f81203be6f18e5c84891"
+      "checksum": "3715821c441163f7f57b3b84524bd57c"
     },
     "lancamentos.rds": {
       "checksum": "177b79319e1aeea69688e0a4cc52534e"
     },
     "server.R": {
-      "checksum": "e9d82fe78bcf254d0ba49ba70c620aeb"
+      "checksum": "93aeb861ca0301570e6431ca4bfe1696"
     },
     "ui.R": {
-      "checksum": "9ff8a92440f1c1c3fe9cdab69c9ebf61"
+      "checksum": "d5ed788fa0c816cc91f88e9f8376bf51"
     }
   },
   "users": null
