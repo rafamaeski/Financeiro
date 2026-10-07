@@ -220,23 +220,24 @@ SUBCATEGORIAS <- c("Moradia","Alimentacao","Transporte","Saude","Educacao",
                    "Lazer","Comprinhas","Assinaturas","Investimento","Outros")
 receitas <- c("Receita Fixa", "Receita Eventual")
 
-## Paleta principal do app, em versoes mais fortes/saturadas das cores base
-## (#90d7ff, #c9f9ff, #bfd0e0, #b8b3be), evitando tons escuros ou neon.
+## Paleta principal do app (#90d7ff, #c9f9ff, #bfd0e0, #b8b3be): variacoes
+## dentro da mesma familia azul / ciano / cinza-azulado / cinza-arroxeado,
+## com saturacao/contraste suficiente pra distinguir varias categorias.
 CORES_SUBCAT <- c(
-  Moradia="#2ba9e0", Alimentacao="#3fae7c", Transporte="#8a5bc2",
-  Saude="#c9507a", Educacao="#5b7fa6", Lazer="#35c4d9",
-  Comprinhas="#c98a4f", Assinaturas="#3f5f7a",
-  Investimento="#7a6f8a", Outros="#6f6f78"
+  Moradia="#2e86ab", Alimentacao="#5aa9c4", Transporte="#4fc3d9",
+  Saude="#9b8aa3", Educacao="#6b7f99", Lazer="#7eb8d4",
+  Comprinhas="#8a9bb0", Assinaturas="#3f5f7a",
+  Investimento="#705f78", Outros="#a8a2ad"
 )
 
-# Verde e vermelho fortes (nem escuros, nem neon) para Receita x Despesa
+# Verde e vermelho do grafico de Receita x Despesa — mantidos como estavam
 COR_RECEITA <- "#3fae6a"
 COR_DESPESA <- "#d1495b"
 
 # Cores para o grafico de distribuicao de investimentos por tipo
 CORES_INVEST <- c(
-  "Renda Fixa"="#2ba9e0", "Fundos"="#35c4d9", "Acoes"="#5b7fa6",
-  "Cripto"="#8a5bc2", "Outros"="#7a6f8a"
+  "Renda Fixa"="#2e86ab", "Fundos"="#4fc3d9", "Acoes"="#6b7f99",
+  "Cripto"="#9b8aa3", "Outros"="#a8a2ad"
 )
 
 tema_app <- theme_minimal(base_family = "sans") +

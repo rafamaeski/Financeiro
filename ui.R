@@ -2,10 +2,10 @@
 ui_app <- page_navbar(
   title = tags$b("Meu Dinheirin"),
   theme = bs_theme(bootswatch="flatly",
-                   primary="#2ba9e0", secondary="#7a6f8a",
-                   success="#3fae6a", danger="#d1495b", info="#35c4d9",
+                   primary="#3f5f7a", secondary="#7a6f8a",
+                   success="#3fae6a", danger="#d1495b", info="#4fc3d9",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
-  bg = "#2ba9e0", inverse = TRUE,
+  bg = "#3f5f7a", inverse = TRUE,
   header = tags$style(HTML("
     .navbar .nav-link.active,
     .navbar .nav-link.show {
