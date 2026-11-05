@@ -6,13 +6,90 @@ ui_app <- page_navbar(
                    success="#3fae6a", danger="#d1495b", info="#4fc3d9",
                    base_font=font_google("Inter"), heading_font=font_google("Inter")),
   bg = "#3f5f7a", inverse = TRUE,
-  header = tags$style(HTML("
-    .navbar .nav-link.active,
-    .navbar .nav-link.show {
-      color: #0d3350 !important;
-      font-weight: 700;
-    }
-  ")),
+  header = tagList(
+    tags$style(HTML("
+      .navbar .nav-link.active,
+      .navbar .nav-link.show {
+        color: #0d3350 !important;
+        font-weight: 700;
+      }
+      .compacto .form-group { margin-bottom: 0 !important; }
+    ")),
+    # Copia as colunas marcadas da tabela "tabela_credito", na ordem em que ela
+    # esta ordenada/filtrada na tela. Roda no navegador (dentro do clique), o que
+    # evita bloqueio de area de transferencia que ocorre com copia via servidor.
+    tags$script(HTML(r"---(
+      (function() {
+        if (window.__copiarDivisaoInit) return;
+        window.__copiarDivisaoInit = true;
+
+        function decodificar(s) {
+          if (s === null || s === undefined) return '';
+          var t = document.createElement('textarea');
+          t.innerHTML = String(s);
+          return t.value;
+        }
+        function limpar(s) {
+          return decodificar(s).replace(/[\t\r\n]+/g, ' ').trim();
+        }
+        function copiarTexto(texto) {
+          if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(texto);
+          }
+          return new Promise(function(resolve, reject) {
+            var ta = document.createElement('textarea');
+            ta.value = texto;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+            if (ok) { resolve(); } else { reject(); }
+          });
+        }
+        function avisar(ok, linhas, colunas, motivo) {
+          if (window.Shiny && Shiny.setInputValue) {
+            Shiny.setInputValue('copia_resultado',
+              {ok: ok, linhas: linhas, colunas: colunas, motivo: motivo || '', t: Date.now()},
+              {priority: 'event'});
+          }
+        }
+
+        $(document).on('click', '#copiar_divisao', function() {
+          var el = $('#tabela_credito table.dataTable');
+          if (!el.length) { avisar(false, 0, 0, 'sem_tabela'); return; }
+
+          var tabela = el.DataTable();
+          var titulos = tabela.columns().header().toArray().map(function(th) { return limpar($(th).text()); });
+          if (titulos.length === 1 && titulos[0] === 'Mensagem') { avisar(false, 0, 0, 'sem_dados'); return; }
+
+          var escolhidas = $('#cols_copiar input:checked').map(function() { return limpar(this.value); }).get();
+          var idx = [];
+          titulos.forEach(function(t, i) { if (escolhidas.indexOf(t) !== -1) idx.push(i); });
+          if (!idx.length) { avisar(false, 0, 0, 'sem_colunas'); return; }
+
+          // ordem 'current' = ordenacao atual da tabela; search 'applied' = respeita a busca/filtro
+          var linhas = tabela.rows({order: 'current', search: 'applied'}).data().toArray();
+          if (!linhas.length) { avisar(false, 0, idx.length, 'sem_dados'); return; }
+
+          var saida = [];
+          if ($('#copiar_cabecalho').is(':checked')) {
+            saida.push(idx.map(function(i) { return titulos[i]; }).join('\t'));
+          }
+          linhas.forEach(function(l) {
+            saida.push(idx.map(function(i) { return limpar(l[i]); }).join('\t'));
+          });
+
+          copiarTexto(saida.join('\n'))
+            .then(function() { avisar(true, linhas.length, idx.length); })
+            .catch(function() { avisar(false, linhas.length, idx.length, 'clipboard'); });
+        });
+      })();
+    )---"))
+  ),
 
   nav_panel("Lancar", icon = icon("plus-circle"),
             br(),
@@ -151,7 +228,17 @@ ui_app <- page_navbar(
                            ),
                            card(
                              card_header("Lancamentos divididos com a namorada"),
-                             card_body(DTOutput("tabela_credito"))
+                             card_body(
+                               checkboxGroupInput("cols_copiar", "Colunas para copiar",
+                                                  choices = COLUNAS_DIVISAO,
+                                                  selected = COLUNAS_DIVISAO,
+                                                  inline = TRUE),
+                               div(class = "compacto d-flex align-items-center gap-3 mb-3",
+                                   actionButton("copiar_divisao", "Copiar",
+                                                icon = icon("copy"), class = "btn-primary btn-sm"),
+                                   checkboxInput("copiar_cabecalho", "Incluir cabecalho", value = TRUE)),
+                               DTOutput("tabela_credito")
+                             )
                            )
             )
   ),

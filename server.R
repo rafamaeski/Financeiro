@@ -589,6 +589,26 @@ server <- function(input, output, session) {
                           info="Mostrando _START_ a _END_ de _TOTAL_")),
         class = "stripe hover"
       )
+  }, server = FALSE)  # server = FALSE: todas as linhas ficam no navegador (necessario p/ copiar na ordem da tela)
+
+  # Retorno do botao "Copiar" (JS em ui.R) da aba Divisao de bens
+  observeEvent(input$copia_resultado, {
+    r <- input$copia_resultado
+    if (isTRUE(r$ok)) {
+      showNotification(
+        paste0(r$linhas, " linha(s) e ", r$colunas, " coluna(s) copiadas."),
+        type = "message", duration = 3
+      )
+    } else {
+      msg <- switch(
+        r$motivo,
+        sem_colunas = "Selecione ao menos uma coluna para copiar.",
+        sem_dados   = "Nao ha linhas na tabela para copiar.",
+        sem_tabela  = "A tabela ainda nao carregou.",
+        "Nao foi possivel copiar. Verifique a permissao de area de transferencia do navegador."
+      )
+      showNotification(msg, type = "warning")
+    }
   })
 
   # ── Investimentos ──────────────────────────────────────────

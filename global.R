@@ -220,6 +220,12 @@ SUBCATEGORIAS <- c("Moradia","Alimentacao","Transporte","Saude","Educacao",
                    "Lazer","Comprinhas","Assinaturas","Investimento","Outros")
 receitas <- c("Receita Fixa", "Receita Eventual")
 
+# Colunas da tabela da aba "Divisao de bens", na mesma ordem em que aparecem
+# (usada no seletor de colunas para copiar; os nomes precisam bater com o
+# select() de output$tabela_credito no server.R)
+COLUNAS_DIVISAO <- c("Data", "Descricao", "Tipo", "Subcategoria", "Valor (R$)",
+                     "% Dela", "Ela paga", "Voce paga", "Vencimento")
+
 ## Paleta principal do app (#90d7ff, #c9f9ff, #bfd0e0, #b8b3be): variacoes
 ## dentro da mesma familia azul / ciano / cinza-azulado / cinza-arroxeado,
 ## com saturacao/contraste suficiente pra distinguir varias categorias.
